@@ -17,7 +17,7 @@
                 :type list)))
 
 (defparameter *tests* (make-hash-table :test 'equal))
-(defparameter *timeout-seconds* 5)
+(defparameter *timeout-seconds* 2)
 
 (defun remove-all-tests ()
   (mapcar (lambda (x) (remove-method #'run x))
