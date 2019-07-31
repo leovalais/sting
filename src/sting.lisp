@@ -147,12 +147,23 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                      :failure-error e))))
 
 
-(defun run-all ()
+(defun run-all-in-parallel ()
+  (lparallel:pmapcar #'run (hash-table-values *tests*)))
+
+(defun run-all-sequentially ()
   (let ((reports '()))
     (maphash-values (lambda (t-)
                       (push (run t-) reports))
                     *tests*)
     reports))
+
+(defun run-all (&key (parallel t))
+  (if parallel
+      (run-all-in-parallel)
+      (run-all-sequentially)))
+
+
+(setf lparallel:*kernel* (lparallel:make-kernel 12))
 
 (defmethod run :before (test)
   (format t "running test ~a~%" (name test)))
