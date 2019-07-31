@@ -1,18 +1,42 @@
 (in-package :sting)
 
-(defparameter *timeout-seconds* 5)
-
 (defclass test ()
   ((name :initarg :name
          :initform (error "a test must have a name")
          :reader name
          :type (and symbol (not keyword)))
+   (package :initarg :package
+            :reader test-package
+            :type symbol)
    (description :initarg :description
                 :initform ""
                 :accessor description
                 :type string)))
 
-(defclass group () nil)
+(defparameter *tests* (make-hash-table :test 'equal))
+(defparameter *timeout-seconds* 5)
+
+(defun remove-test (test)
+  (let ((key (etypecase test
+               (test
+                (cons (test-package test)
+                      (name test)))
+               (symbol
+                (cons (symbolicate (package-name *package*))
+                      test))
+               ((cons symbol symbol)
+                test)
+               ((cons package symbol)
+                (cons (symbolicate (package-name (car test)))
+                      (cdr test))))))
+    (remhash key *tests*)))
+
+(defun add-test (test)
+  (let ((key (cons (test-package test)
+                   (name test))))
+    (when (gethash key *tests*)
+      (warn "redefinition of test ~a" key))
+    (setf (gethash key *tests*) test)))
 
 (defclass report ()
   ((test :initarg :test
@@ -32,45 +56,38 @@
                   :reader failure-error
                   :type failure-error)))
 
-(defgeneric run (test group)
-  (:documentation "Executes the content of the `test' in the given `group'.
+(defgeneric run (test)
+  (:documentation "Executes the content of the given `test'.
 * `test' can be:
   - an instance of a subtype of `sting:test'
   - an EQL specializer on the name of the test
-* `group' is an instance of either `sting:group' or one of its subclasses.
 
 It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))
 
 
-;;; TODO actually implement group logic...
-(defun create-test (name group initargs body)
-  (with-gensyms (test)
-    `(let ((,test (make-instance 'test :name ',name ,@initargs)))
+(defun create-test (name initargs body)
+  (with-gensyms (test test-parameter)
+    `(let ((,test (make-instance 'test
+                                 :name ',name
+                                 :package (symbolicate (package-name *package*))
+                                 ,@initargs)))
        (flet ((test () ,test))
          (declare (ignorable (function test)))
-         (defmethod run ((test (eql ,test)) group)
+         (defmethod run ((,test-parameter (eql ,test)))
            (eval-in-test-runtime ,test (lambda () ,@body)))
-         ;; (defmethod run ((test (eql ',name)) group)
-         ;;   (run ,test ',group))
-         (defun ,(if group
-                     (symbolicate group "/" name)
-                     name)
-             ()
-           (run ,test ',group))))))
+         (defun ,name ()
+           (run ,test)))
+       (add-test ,test)
+       ,test)))
 
-(defmacro define-test (name-form &body body-form)
-  (multiple-value-bind (name group)
-      (trivia:match name-form
-        ((type symbol) (values name-form nil))
-        ((list name) (values name nil))
-        ((list group name) (values name group)))
-    (multiple-value-bind (initargs body)
-        (loop :for b := body-form :then (cdr b)
-              :for decl := (car b)
-              :while (keywordp (car decl))
-              :appending decl :into initargs
-              :finally (return (values initargs b)))
-      (create-test name group initargs body))))
+(defmacro define-test (name &body body-form)
+  (multiple-value-bind (initargs body)
+      (loop :for b := body-form :then (cdr b)
+            :for decl := (car b)
+            :while (keywordp (car decl))
+            :appending decl :into initargs
+            :finally (return (values initargs b)))
+    (create-test name initargs body)))
 
 (defun eval-in-test-runtime (test function)
   (handler-case (trivial-timeout:with-timeout (*timeout-seconds*)
@@ -95,10 +112,10 @@ It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))
 (mapcar (lambda (x) (remove-method #'run x))
         (closer-mop:generic-function-methods #'run))
 
-(defmethod run :before (test _)
+(defmethod run :before (test)
   (format t "running test ~a~%" (name test)))
 
-(define-test (stp t1)
+(define-test t1
   (:description "mdr")
   (assert-= 1 2))
 
