@@ -11,7 +11,10 @@
    (description :initarg :description
                 :initform ""
                 :accessor description
-                :type string)))
+                :type string)
+   (source-info :initarg :source-info
+                :accessor source-info
+                :type list)))
 
 (defparameter *tests* (make-hash-table :test 'equal))
 (defparameter *timeout-seconds* 5)
@@ -29,6 +32,7 @@
                ((cons package symbol)
                 (cons (symbolicate (package-name (car test)))
                       (cdr test))))))
+    ;; TODO: also remove generated run method and function
     (remhash key *tests*)))
 
 (defun add-test (test)
@@ -65,12 +69,44 @@
 It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))
 
 
+#+(and swank sbcl)
+(defun find-snippet-and-offset-and-file-or-buffer ()
+  "Returns a plist (:snippet :offset :file) or (:snippet :offset :buffer)
+containing the source information of the form being compiled/loaded at frame
+index 1 in SBCL. Requires Swank.
+Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtraces.html"
+  (swank-backend::call-with-debugging-environment
+   (lambda ()
+     (let* ((data (apply #'append
+                         (remove-if #'atom
+                                    (swank-backend:frame-source-location 1)))))
+       (if (getf data :buffer)
+           ;; XXX the returned keyword/value list has an odd number of elements...
+           (loop :with buffer :with offset :with snippet
+                 :for iter := data :then (cdr iter)
+                 :while iter
+                 :for k := (car iter)
+                 :for v := (cadr iter)
+                 :when (eql k :buffer)
+                   :do (setf buffer v)
+                 :when (eql k :offset)
+                   :do (setf offset v)
+                 :when (eql k :snippet)
+                   :do (setf snippet v)
+                 :finally (return (list :buffer buffer :snippet snippet :offset offset)))
+           ;; XXX default value for :position to silence SBCL type warning
+           (destructuring-bind (&key file (position 0) snippet &allow-other-keys)
+               data
+             (list :file file :offset (1+ position) :snippet snippet)))))))
+
 (defun create-test (name initargs body)
   (with-gensyms (test test-parameter)
     `(let ((,test (make-instance 'test
                                  :name ',name
                                  :package (symbolicate (package-name *package*))
                                  ,@initargs)))
+       #+(and swank sbcl) (setf (source-info ,test)
+                                (find-snippet-and-offset-and-file-or-buffer))
        (flet ((test () ,test))
          (declare (ignorable (function test)))
          (defmethod run ((,test-parameter (eql ,test)))
