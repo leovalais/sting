@@ -68,9 +68,9 @@
 
 (defgeneric run (test)
   (:documentation "Executes the content of the given `test'.
-* `test' can be:
-  - an instance of a subtype of `sting:test'
-  - an EQL specializer on the name of the test
+`test' can be:
+- an instance of a subtype of `sting:test'
+- an EQL specializer on the name of the test
 
 It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))
 
@@ -147,8 +147,8 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                      :failure-error e))))
 
 
-(defun run-all-in-parallel ()
-  (lparallel:pmapcar #'run (hash-table-values *tests*)))
+(defun run-in-parallel (tests)
+  (lparallel:pmapcar #'run tests))
 
 (defun run-all-sequentially ()
   (let ((reports '()))
@@ -159,9 +159,27 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
 
 (defun run-all (&key (parallel t))
   (if parallel
-      (run-all-in-parallel)
+      (run-in-parallel (hash-table-values *tests*))
       (run-all-sequentially)))
 
+(defun run-package-sequentially (package)
+  (let ((reports '()))
+    (maphash-values (lambda (t-)
+                      (when (eql (test-package t-) package)
+                        (push (run t-) reports)))
+                    *tests*)
+    reports))
+
+(defun run-package (package &key (parallel t))
+  (let ((package (etypecase package
+                   (package (symbolicate (package-name package)))
+                   (keyword (symbolicate (symbol-name package)))
+                   (string (symbolicate package))
+                   (symbol package))))
+    (if parallel
+        (run-in-parallel (remove package (hash-table-values *tests*)
+                                 :test-not #'eql :key #'test-package))
+        (run-package-sequentially package))))
 
 (setf lparallel:*kernel* (lparallel:make-kernel 12))
 
@@ -173,8 +191,8 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
   (assert-= 1 2))
 
 (define-test t2
-  (:description "t2")
-  (assert-< 1 2))
+  (assert-not (sleep 10)))
 
 (define-test t3
-  (assert-not (sleep 10)))
+  (:description "t3 is the new t2")
+  (assert-< 1 2))
