@@ -19,6 +19,12 @@
 (defparameter *tests* (make-hash-table :test 'equal))
 (defparameter *timeout-seconds* 5)
 
+(defun remove-all-tests ()
+  (mapcar (lambda (x) (remove-method #'run x))
+          (closer-mop:generic-function-methods #'run))
+  (setf *tests* (make-hash-table :test 'equal))
+  (values))
+
 (defun remove-test (test)
   (let ((key (etypecase test
                (test
@@ -141,12 +147,12 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                      :failure-error e))))
 
 
-;; (defun run-all ()
-;;   (dolist (run-method (closer-mop:generic-function-methods #'run))
-
-
-(mapcar (lambda (x) (remove-method #'run x))
-        (closer-mop:generic-function-methods #'run))
+(defun run-all ()
+  (let ((reports '()))
+    (maphash-values (lambda (t-)
+                      (push (run t-) reports))
+                    *tests*)
+    reports))
 
 (defmethod run :before (test)
   (format t "running test ~a~%" (name test)))
