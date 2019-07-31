@@ -39,22 +39,18 @@
        (if ,x
            (fail ,x ',test-form ,desc)))))
 
-(defmacro assert-error (error-name test-form &key (desc "") validation-function)
+(defmacro assert-error (error-name test-form &key (desc ""))
   (with-gensyms (err x)
     `(handler-case (progn
                      (let ((,x ,test-form))
                        (fail :no-error ',test-form ,desc)
                        ,x))
        (,error-name (,err)
-         ,@(if validation-function
-               `((unless (funcall ,validation-function ,err)
-                   (fail ,err ',test-form ,desc)))
-               `((declare (ignore ,err)))))
+         (declare (ignore ,err)))
        (condition (,err)
          (fail ,err ',test-form ,desc)))))
 
 ;; (assert-error division-by-zero (/ 1 0))
-;; (assert-error division-by-zero (/ 1 1) :validation-function (lambda (e) (not (eql e nil))))
 
 (defmacro define-assertion (name function &rest arguments)
   `(defmacro ,name (,@arguments &key (desc ""))
