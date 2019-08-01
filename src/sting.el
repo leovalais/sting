@@ -9,6 +9,7 @@
 
 (defvar sting-mode-map (make-sparse-keymap))
 (define-key sting-mode-map (kbd "C-c C-c") 'sting-run)
+(define-key sting-mode-map (kbd "C-c C-g") 'sting-open-source-interactive)
 
 (define-derived-mode sting-mode fundamental-mode "sting"
   "blah"
@@ -61,6 +62,18 @@
   (dolist (val values)
     (insert val)))
 
+(defun sting-make-simple-button (fun properties &rest text-to-insert)
+  (mapc #'insert text-to-insert)
+  (let* ((size (reduce #'+ text-to-insert :key #'length :initial-value 0))
+         (p (point))
+         (button (apply #'make-button
+                        (- p size) p
+                        'face nil
+                        'follow-link t
+                        'action fun
+                        properties)))
+    button))
+
 (defun sting-insert-test-expansion (test)
   (let ((description (sting-test-description test))
         (source-info (sting-test-source-info test))
@@ -75,13 +88,15 @@
       (insert-newline)
       (let ((location (or (getf source-info :buffer)
                           (getf source-info :file)))
-            (offset (getf source-info :offset))
-            (snippet (getf source-info :snippet)))
-        (insert "   ")
-        (insert (propertize location 'face 'compilation-info))
-        (insert ":")
-        (insert (propertize (format "%d" offset)
-                            'face 'compilation-line-number))))
+            (offset (getf source-info :offset)))
+        (sting-insert-indentation)
+        (sting-make-simple-button (lambda (btn)
+                                    (sting-open-source (button-get btn 'sting-test)))
+                                  (list 'sting-test test)
+                                  (propertize location 'face 'compilation-info)
+                                  ":"
+                                  (propertize (format "%d" offset)
+                                              'face 'compilation-line-number))))
     (etypecase report
       (null)
       (sting-pass-report
@@ -101,7 +116,7 @@
     (when (and source-info sting-show-snippets)
       (insert-newline)
       (insert "```") (insert-newline)
-      (insert snippet)
+      (insert (getf source-info :snippet))
       (insert "'''") (insert-newline))))
 
 (defun insert-test (test)

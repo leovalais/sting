@@ -87,20 +87,42 @@
   (interactive)
   (slime-eval-async '(sting::send-tests)))
 
+
+(defun sting-backwards-till-property-found (property)
+  "Starts at `point' and moves one character backwards until a character with `property' is found.
+Returns the value of that property for that character."
+  (loop for p = (point) then (1- p)
+        while (/= p 0)
+        for value = (get-text-property p property)
+        until value
+        finally (return value)))
+
 (defun sting-run ()
   (interactive)
   (unless sting-loaded-tests
     (error "no tests loaded"))
   ;; Rewind one character back until a header is found (it has the needed property sting-test).
   ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
-  (let ((test (loop for p = (point) then (1- p)
-                    for test = (get-text-property p 'sting-test)
-                    while (and (> p 0)
-                               (not test))
-                    finally (return test))))
-    (if test
-        (progn
-          (sting-remove-report test) ; remove its report (changes the indicator)
-          (repaint-buffer) ; make these changes effective
-          (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
-      (message "no test found at point"))))
+  (if-let (test (sting-backwards-till-property-found 'sting-test))
+      (progn
+        (sting-remove-report test) ; remove its report (changes the indicator)
+        (repaint-buffer) ; make these changes effective
+        (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
+      (message "no test found at point")))
+
+(defun sting-open-source-interactive ()
+  (interactive)
+  (unless sting-loaded-tests
+    (error "no tests loaded"))
+  (if-let (test (sting-backwards-till-property-found 'sting-test))
+      (sting-open-source test)
+    (message "no test found at point")))
+
+(defun sting-open-source (test)
+  (if-let (source-info (sting-test-source-info test))
+      (progn
+        (if-let (buffer (getf source-info :buffer))
+            (pop-to-buffer buffer)
+          (find-file-other-window (getf source-info :file)))
+        (goto-char (getf source-info :offset)))
+    (error "no source information found for test ~s" test)))
