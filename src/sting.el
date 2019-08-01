@@ -4,7 +4,7 @@
 
 (defvar sting-show-snippets nil)
 (defvar sting-colorize-snippets nil
-  "WARNING: Highly experimental!")
+  "WARNING: Highly experimental and very likely to break everything!")
 
 
 (defvar sting-mode-map (make-sparse-keymap))
@@ -45,27 +45,32 @@
 (defface sting-success-indicator-face '((t :foreground "green")) "")
 (defface sting-failure-indicator-face '((t :foreground "red")) "")
 (defface sting-timeout-indicator-face '((t :foreground "orange")) "")
-
+(defface sting-property-face '((t :underline t)) "")
 
 (defun insert-newline ()
   (insert "
 "))
 
+(defun sting-insert-indentation ()
+  (insert "   "))
+
+(defun sting-insert-property (prop &rest values)
+  (sting-insert-indentation)
+  (insert (propertize (format "%s:" prop) 'face 'sting-property-face))
+  (insert " ")
+  (dolist (val values)
+    (insert val)))
+
 (defun sting-insert-test-expansion (test)
-  (let ((description (sting-test-description test)))
+  (let ((description (sting-test-description test))
+        (source-info (sting-test-source-info test))
+        (report (sting-get-report test)))
     (when (and description
                (not (string= description "")))
       (insert-newline)
-      (insert (propertize (format "   %s" description)
-                          'face 'font-lock-comment-face))))
-  (when (and (sting-fail-report-p report)
-             (eql (sting-fail-report-kind report) :timeout))
-    (insert-newline)
-    (insert "   Timeout after ")
-    (insert (propertize (format "%d" (sting-fail-report-timeout-seconds report))
-                        'face 'sting-timeout-indicator-face))
-    (insert "s"))
-  (let ((source-info (sting-test-source-info test)))
+      (sting-insert-indentation)
+      (insert (propertize (format "%s" description)
+                          'face 'font-lock-comment-face)))
     (when source-info
       (insert-newline)
       (let ((location (or (getf source-info :buffer)
@@ -76,12 +81,28 @@
         (insert (propertize location 'face 'compilation-info))
         (insert ":")
         (insert (propertize (format "%d" offset)
-                            'face 'compilation-line-number))
-        (when sting-show-snippets
+                            'face 'compilation-line-number))))
+    (etypecase report
+      (null)
+      (sting-pass-report
+       (insert-newline)
+       (sting-insert-property "Eval values" (sting-pass-report-values report)))
+      (sting-fail-report
+       (ecase (sting-fail-report-kind report)
+         (:timeout
           (insert-newline)
-          (insert "```") (insert-newline)
-          (insert snippet)
-          (insert "'''") (insert-newline))))))
+          (sting-insert-property "Timeout"
+                                 (propertize (format "%d" (sting-fail-report-timeout-seconds report))
+                                             'face 'sting-timeout-indicator-face)
+                                 "s"))
+         (:assertion
+          (insert-newline)
+          (sting-insert-property "Error" (sting-fail-report-error report))))))
+    (when (and source-info sting-show-snippets)
+      (insert-newline)
+      (insert "```") (insert-newline)
+      (insert snippet)
+      (insert "'''") (insert-newline))))
 
 (defun insert-test (test)
   (let ((report (sting-get-report test)))
