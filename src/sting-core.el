@@ -34,6 +34,20 @@
                  (sting-test-name test))
            sting-reports))
 
+(defun sting-sort-test ()
+  (setq sting-loaded-tests
+        (sort sting-loaded-tests
+              (lambda (t1 t2) ; returns whether t1 < t2
+                (let ((pt1 (sting-test-package t1))
+                      (pt2 (sting-test-package t2))
+                      (nt1 (sting-test-name t1))
+                      (nt2 (sting-test-name t2)))
+                  (cond
+                   ((string-lessp pt1 pt2) t)
+                   ((string-equal pt1 pt2) (string-lessp nt1 nt2))))))))
+
+
+
 (defun deserialize-test (test)
   (assert (eql (getf test :tag) :test))
   (destructuring-bind (&key name package description source-info &allow-other-keys) ; the :tag
@@ -58,6 +72,7 @@
         (mapcar #'deserialize-test tests))
   (setq sting-reports (make-hash-table :test 'equal))
   (setq sting-expanded (make-hash-table))
+  (sting-sort-test)
   (repaint-buffer))
 
 (defslimefun sting-recieve-reports (reports)
