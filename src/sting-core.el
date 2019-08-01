@@ -96,7 +96,10 @@
 (defun sting-connect ()
   (interactive)
   (message "sting: handshaking slime...")
-  (setq sting-handshaked (slime-eval '(sting::handshake)))
+  (setq sting-handshaked
+        (condition-case err
+            (slime-eval '(sting::handshake))
+          (error nil)))
   (if sting-handshaked
       (message "sting successfully connected to slime!")
     (error "sting failed to handshake with slime")))

@@ -2,6 +2,8 @@
 
 ;;;; TODO: conditional compilation
 
+(defparameter *sting-client-connected?* nil)
+
 (defgeneric serialize (object))
 
 (defmethod serialize ((test test))
@@ -27,7 +29,19 @@
           :timeout-seconds timeout-seconds)))
 
 (defun handshake ()
-  t)
+  "Hanshakes with sting Emacs client. Returns T to signal that CL connection job
+has succeeded. Fails if another (perhaps the same) sting client was connected,
+signals an error and sends NIL to the client which initiated this handshake."
+  (flet ((ok ()
+           (setf *sting-client-connected?* t)
+           t))
+    (cond
+      (*sting-client-connected?*
+       (restart-case (error "A sting client is already connected.")
+         (still-connect ()
+           :report "Ignore the possible redundancy and proceed anyway (have you multiple buffers with sting-mode in?)"
+           (ok))))
+      (t (ok)))))
 
 (defun send-tests ()
   (swank:ed-rpc-no-wait 'sting-recieve-tests
