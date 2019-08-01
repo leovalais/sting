@@ -7,28 +7,26 @@
 (defstruct sting-fail-report
   kind error timeout-seconds)
 
-(defvar sting-loaded-tests (list (make-sting-test :name 't1 :package 'cl-user
-                                                  :description "The first test"
-                                                  :source-info '())
-                                 (make-sting-test :name 't2 :package 'cl-user
-                                                  :description "The second test"
-                                                  :source-info '())
-                                 (make-sting-test :name 't3 :package 'cl-user
-                                                  :description "The third test"
-                                                  :source-info '())
-                                 (make-sting-test :name 't4 :package 'cl-user
-                                                  :description "The fourth test"
-                                                  :source-info '())))
-
+(defvar sting-loaded-tests (list))
 (defvar sting-reports (make-hash-table))
-(progn
-  (setf (gethash (first sting-loaded-tests) sting-reports) (make-sting-pass-report :values '(42)))
-  (setf (gethash (third sting-loaded-tests) sting-reports) (make-sting-fail-report :kind :assertion))
-  (setf (gethash (fourth sting-loaded-tests) sting-reports) (make-sting-fail-report :kind :timeout :timeout-seconds 5)))
-
 (defvar sting-expanded (make-hash-table))
-(progn
-  (setf (gethash (third sting-loaded-tests) sting-expanded) t))
+
+
+(defun deserialize-test (test)
+  (assert (eql (getf test :tag) :test))
+  (destructuring-bind (&key name package description source-info &allow-other-keys)
+      test
+    (make-sting-test :name name :package package
+                     :description description :source-info source-info)))
+
+(defslimefun sting-recieve-tests (tests)
+  (setq sting-loaded-tests
+        (mapcar #'deserialize-test tests))
+  (repaint-buffer))
+
+(defun sting-load-tests ()
+  (interactive)
+  (slime-eval-async '(sting::send-tests)))
 
 (defconst sting-result-indicator "⬤")
 
@@ -63,13 +61,13 @@
                                                      (:timeout 'sting-timeout-indicator-face))))
                         'sting-test test))
     (insert (propertize " " 'sting-test test))
-    (let* ((package (symbol-name (sting-test-package test)))
-           (name (symbol-name (sting-test-name test)))
+    (let* ((package (sting-test-package test))
+           (name (sting-test-name test))
            (button-size (+ (length package)
                            (length name)
-                           3))) ; grab the indicator, the space and the /
+                           3))) ; grab the indicator, the space and the :
       (insert (propertize package 'face 'font-lock-builtin-face 'sting-test test))
-      (insert (propertize "/" 'sting-test test))
+      (insert (propertize ":" 'sting-test test))
       (insert (propertize name 'face 'font-lock-function-name-face 'sting-test test))
       (let ((button (make-button (- (point) button-size) (point)
                                  'face nil
@@ -117,11 +115,14 @@
                                (not test))
                     finally (return test))))
     (if test
-        (message "executing %s" test)
+        (slime-eval-async `(sting::run (sting::find-test (cl:cons ',(sting-test-package test)
+                                                                  ',(sting-test-name test)))))
       (message "no test found at point"))))
 
 (with-current-buffer (sting-buffer)
   (local-set-key (kbd "C-c C-c") 'sting-run))
+
+(global-set-key (kbd "C-c t l") 'sting-load-tests)
 
 ;; At the very end
 (with-current-buffer (sting-buffer)

@@ -25,19 +25,28 @@
   (setf *tests* (make-hash-table :test 'equal))
   (values))
 
+(defun test-hash-table-key (test)
+  (etypecase test
+    (test
+     (cons (test-package test)
+           (name test)))
+    (symbol
+     (cons (symbolicate (package-name *package*))
+           test))
+    (string
+     (cons (symbolicate (package-name *package*))
+           (symbolicate test)))
+    ((cons symbol symbol)
+     test)
+    ((cons string string)
+     (cons (symbolicate (package-name (find-package (symbolicate (car test)))))
+           (symbolicate (cdr test))))
+    ((cons package symbol)
+     (cons (symbolicate (package-name (car test)))
+           (cdr test)))))
+
 (defun remove-test (test)
-  (let ((key (etypecase test
-               (test
-                (cons (test-package test)
-                      (name test)))
-               (symbol
-                (cons (symbolicate (package-name *package*))
-                      test))
-               ((cons symbol symbol)
-                test)
-               ((cons package symbol)
-                (cons (symbolicate (package-name (car test)))
-                      (cdr test))))))
+  (let ((key (test-hash-table-key test)))
     ;; TODO: also remove generated run method and function
     (remhash key *tests*)))
 
@@ -47,6 +56,10 @@
     (when (gethash key *tests*)
       (warn "redefinition of test ~a" key))
     (setf (gethash key *tests*) test)))
+
+(defun find-test (test)
+  (let ((key (test-hash-table-key test)))
+    (gethash key *tests*)))
 
 (defclass report ()
   ((test :initarg :test
@@ -64,7 +77,7 @@
          :type (member :assertion :timeout))
    (failure-error :initarg :failure-error
                   :reader failure-error
-                  :type failure-error)))
+                  :type condition)))
 
 (defgeneric run (test)
   (:documentation "Executes the content of the given `test'.

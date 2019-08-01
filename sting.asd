@@ -18,4 +18,5 @@
   :components ((:module "src"
                 :components ((:file "package")
                              (:file "assertions")
-                             (:file "sting")))))
+                             (:file "sting")
+                             (:file "emacs")))))
