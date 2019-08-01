@@ -33,9 +33,14 @@
 (defun sting-buffer ()
   (get-buffer-create "*sting*"))
 
-(display-buffer-in-side-window (sting-buffer)
-                               '((side . right)
-                                 (window-width . 0.2)))
+(defun sting-toggle-window ()
+  (interactive)
+  (let ((window (get-buffer-window (sting-buffer))))
+    (if window
+        (delete-window window)
+      (display-buffer-in-side-window (sting-buffer)
+                                     '((side . right)
+                                       (window-width . 0.2))))))
 
 (defface sting-no-result-indicator-face '((t :foreground "white")) "")
 (defface sting-success-indicator-face '((t :foreground "green")) "")
@@ -123,6 +128,8 @@
   (local-set-key (kbd "C-c C-c") 'sting-run))
 
 (global-set-key (kbd "C-c t l") 'sting-load-tests)
+(global-set-key (kbd "C-c t w") 'sting-toggle-window)
+(global-set-key (kbd "C-c t TAB") 'sting-toggle-window)
 
 ;; At the very end
 (with-current-buffer (sting-buffer)
