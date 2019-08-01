@@ -74,10 +74,10 @@
 
 (defun sting-run ()
   (interactive)
-  ;; Rewind one character back until a header is found (it has the needed property sting-test).
-  ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
   (unless sting-loaded-tests
     (error "no tests loaded"))
+  ;; Rewind one character back until a header is found (it has the needed property sting-test).
+  ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
   (let ((test (loop for p = (point) then (1- p)
                     for test = (get-text-property p 'sting-test)
                     while (and (> p 0)
