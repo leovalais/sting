@@ -43,9 +43,10 @@
                                        (window-width . 0.25))))))
 
 (defface sting-no-result-indicator-face '((t :foreground "white")) "")
-(defface sting-success-indicator-face '((t :foreground "green")) "")
-(defface sting-failure-indicator-face '((t :foreground "red")) "")
-(defface sting-timeout-indicator-face '((t :foreground "orange")) "")
+(defface sting-success-indicator-face '((t :foreground "#30d158")) "")
+(defface sting-failure-indicator-face '((t :foreground "#ff453a")) "")
+(defface sting-timeout-indicator-face '((t :foreground "#ff9f0a")) "")
+(defface sting-running-indicator-face '((t :foreground "#5e5ce6")) "")
 (defface sting-property-face '((t :underline t)) "")
 
 (defun insert-newline ()
@@ -99,6 +100,7 @@
                                               'face 'compilation-line-number))))
     (etypecase report
       (null)
+      ((eql :running))
       (sting-pass-report
        (insert-newline)
        (sting-insert-property "Eval values" (sting-pass-report-values report)))
@@ -124,6 +126,7 @@
     (insert (propertize sting-result-indicator
                         'face (etypecase report
                                 (null 'sting-no-result-indicator-face)
+                                ((eql :running) 'sting-running-indicator-face)
                                 (sting-pass-report 'sting-success-indicator-face)
                                 (sting-fail-report (ecase (sting-fail-report-kind report)
                                                      (:assertion 'sting-failure-indicator-face)

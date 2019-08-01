@@ -11,6 +11,7 @@
 
 (defun sting-report-test (report)
   (etypecase report
+
     (sting-pass-report (sting-pass-report-test report))
     (sting-fail-report (sting-fail-report-test report))))
 
@@ -33,6 +34,13 @@
   (remhash (cons (sting-test-package test)
                  (sting-test-name test))
            sting-reports))
+
+(defun sting-mark-test-as-running (test)
+  (sting-remove-report test)
+  (setf (gethash (cons (sting-test-package test)
+                       (sting-test-name test))
+                 sting-reports)
+        :running))
 
 (defun sting-sort-test ()
   (setq sting-loaded-tests
@@ -105,7 +113,7 @@ Returns the value of that property for that character."
   ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
   (if-let (test (sting-backwards-till-property-found 'sting-test))
       (progn
-        (sting-remove-report test) ; remove its report (changes the indicator)
+        (sting-mark-test-as-running test) ; remove its report and changes the indicator
         (repaint-buffer) ; make these changes effective
         (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
       (message "no test found at point")))
