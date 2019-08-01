@@ -29,18 +29,6 @@
 (global-set-key (kbd "C-c t TAB") 'sting-toggle-window)
 
 
-(defstruct sting-test
-  name package description source-info)
-(defstruct sting-pass-report
-  values)
-(defstruct sting-fail-report
-  kind error timeout-seconds)
-
-(defvar sting-loaded-tests (list))
-(defvar sting-reports (make-hash-table))
-(defvar sting-expanded (make-hash-table))
-
-
 (defun sting-buffer ()
   (get-buffer-create sting-buffer-name))
 
@@ -96,7 +84,7 @@
           (insert "'''") (insert-newline))))))
 
 (defun insert-test (test)
-  (let ((report (gethash test sting-reports)))
+  (let ((report (sting-get-report test)))
     (insert (propertize sting-result-indicator
                         'face (etypecase report
                                 (null 'sting-no-result-indicator-face)

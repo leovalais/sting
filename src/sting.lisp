@@ -25,40 +25,42 @@
   (setf *tests* (make-hash-table :test 'equal))
   (values))
 
-(defun test-hash-table-key (test)
-  (etypecase test
+(defun test-hash-table-key (test-descriptor)
+  (etypecase test-descriptor
     (test
-     (cons (test-package test)
-           (name test)))
+     (cons (test-package test-descriptor)
+           (name test-descriptor)))
     (symbol
      (cons (symbolicate (package-name *package*))
-           test))
+           test-descriptor))
     (string
      (cons (symbolicate (package-name *package*))
-           (symbolicate test)))
+           (symbolicate test-descriptor)))
     ((cons symbol symbol)
-     test)
+     test-descriptor)
     ((cons string string)
-     (cons (symbolicate (package-name (find-package (symbolicate (car test)))))
-           (symbolicate (cdr test))))
+     (if-let (package (find-package (symbolicate (car test-descriptor))))
+       (cons (symbolicate (package-name package))
+             (symbolicate (cdr test-descriptor)))
+       (error "could not find the package of test ~s" test-descriptor)))
     ((cons package symbol)
-     (cons (symbolicate (package-name (car test)))
-           (cdr test)))))
+     (cons (symbolicate (package-name (car test-descriptor)))
+           (cdr test-descriptor)))))
 
-(defun remove-test (test)
-  (let ((key (test-hash-table-key test)))
+(defun remove-test (test-descriptor)
+  (let ((key (test-hash-table-key test-descriptor)))
     ;; TODO: also remove generated run method and function
     (remhash key *tests*)))
 
 (defun add-test (test)
-  (let ((key (cons (test-package test)
-                   (name test))))
+  (declare (type test test))
+  (let ((key (test-hash-table-key test)))
     (when (gethash key *tests*)
       (warn "redefinition of test ~a" key))
     (setf (gethash key *tests*) test)))
 
-(defun find-test (test)
-  (let ((key (test-hash-table-key test)))
+(defun find-test (test-descriptor)
+  (let ((key (test-hash-table-key test-descriptor)))
     (gethash key *tests*)))
 
 (defclass report ()
@@ -77,7 +79,11 @@
          :type (member :assertion :timeout))
    (failure-error :initarg :failure-error
                   :reader failure-error
-                  :type condition)))
+                  :type condition)
+   (timeout-seconds :initarg :timeout-seconds
+                    :initform nil
+                    :reader timeout-seconds
+                    :type (or null number))))
 
 (defgeneric run (test)
   (:documentation "Executes the content of the given `test'.
@@ -118,7 +124,7 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                data
              (list :file file :offset (1+ position) :snippet snippet)))))))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun create-test (name initargs body)
     (with-gensyms (test test-parameter)
       `(eval-when (:load-toplevel :execute)
@@ -159,7 +165,8 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
       (make-instance 'failure
                      :test test
                      :failure-kind :timeout
-                     :failure-error e))))
+                     :failure-error e
+                     :timeout-seconds *timeout-seconds*))))
 
 
 (defun run-in-parallel (tests)
