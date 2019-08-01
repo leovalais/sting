@@ -118,22 +118,24 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                data
              (list :file file :offset (1+ position) :snippet snippet)))))))
 
-(defun create-test (name initargs body)
-  (with-gensyms (test test-parameter)
-    `(let ((,test (make-instance 'test
-                                 :name ',name
-                                 :package (symbolicate (package-name *package*))
-                                 ,@initargs)))
-       #+(and swank sbcl) (setf (source-info ,test)
-                                (find-snippet-and-offset-and-file-or-buffer))
-       (flet ((test () ,test))
-         (declare (ignorable (function test)))
-         (defmethod run ((,test-parameter (eql ,test)))
-           (eval-in-test-runtime ,test (lambda () ,@body)))
-         (defun ,name ()
-           (run ,test)))
-       (add-test ,test)
-       ,test)))
+(eval-when (:compile-toplevel)
+  (defun create-test (name initargs body)
+    (with-gensyms (test test-parameter)
+      `(eval-when (:load-toplevel :execute)
+         (let ((,test (make-instance 'test
+                                     :name ',name
+                                     :package (symbolicate (package-name *package*))
+                                     ,@initargs)))
+           #+(and swank sbcl) (setf (source-info ,test)
+                                    (find-snippet-and-offset-and-file-or-buffer))
+           (flet ((test () ,test))
+             (declare (ignorable (function test)))
+             (defmethod run ((,test-parameter (eql ,test)))
+               (eval-in-test-runtime ,test (lambda () ,@body)))
+             (defun ,name ()
+               (run ,test)))
+           (add-test ,test)
+           ,test)))))
 
 (defmacro define-test (name &body body-form)
   (multiple-value-bind (initargs body)
@@ -198,6 +200,9 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
 
 (defmethod run :before (test)
   (format t "running test ~a~%" (name test)))
+
+
+;;; FIXME loading a region messes with the :snippet and the :offset
 
 (define-test t1
   (:description "mdr")
