@@ -29,6 +29,11 @@
                  sting-reports)
         report))
 
+(defun sting-remove-report (test)
+  (remhash (cons (sting-test-package test)
+                 (sting-test-name test))
+           sting-reports))
+
 (defun deserialize-test (test)
   (assert (eql (getf test :tag) :test))
   (destructuring-bind (&key name package description source-info &allow-other-keys) ; the :tag
@@ -56,9 +61,11 @@
   (repaint-buffer))
 
 (defslimefun sting-recieve-reports (reports)
-  (dolist (serialized-report reports)
-    (let ((report (deserialize-report serialized-report)))
-      (sting-put-report report)))
+  (let ((reports (mapcar #'deserialize-report reports)))
+    (mapc #'sting-put-report reports)
+    (message (if (some #'sting-fail-report-p reports)
+                 "Some tests failed"
+               "All tests passed")))
   (repaint-buffer))
 
 (defun sting-load-tests ()
@@ -77,5 +84,8 @@
                                (not test))
                     finally (return test))))
     (if test
-        (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test)))
+        (progn
+          (sting-remove-report test) ; remove its report (changes the indicator)
+          (repaint-buffer) ; make these changes effective
+          (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
       (message "no test found at point"))))
