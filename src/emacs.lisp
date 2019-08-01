@@ -26,6 +26,9 @@
           :error (format nil "~S" failure-error)
           :timeout-seconds timeout-seconds)))
 
+(defun handshake ()
+  t)
+
 (defun send-tests ()
   (swank:ed-rpc-no-wait 'sting-recieve-tests
                         (mapcar #'serialize

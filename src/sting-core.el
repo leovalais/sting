@@ -15,6 +15,7 @@
     (sting-pass-report (sting-pass-report-test report))
     (sting-fail-report (sting-fail-report-test report))))
 
+(defvar sting-handshaked t)
 (defvar sting-loaded-tests (list))
 (defvar sting-reports (make-hash-table :test 'equal))
 (defvar sting-expanded (make-hash-table))
@@ -91,10 +92,18 @@
                "All tests passed")))
   (repaint-buffer))
 
+
+(defun sting-connect ()
+  (interactive)
+  (message "sting: handshaking slime...")
+  (setq sting-handshaked (slime-eval '(sting::handshake)))
+  (if sting-handshaked
+      (message "sting successfully connected to slime!")
+    (error "sting failed to handshake with slime")))
+
 (defun sting-load-tests ()
   (interactive)
   (slime-eval-async '(sting::send-tests)))
-
 
 (defun sting-backwards-till-property-found (property)
   "Starts at `point' and moves one character backwards until a character with `property' is found.

@@ -15,6 +15,7 @@
   "blah"
   ;; Useless: Emacs finds it automatically (<mode-name>-map naming).
   ;; (use-local-map my-mode-map)
+  (sting-connect)
 
   (when sting-colorize-snippets
     (mmm-add-classes '((sting-lisp
