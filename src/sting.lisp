@@ -18,6 +18,18 @@
 
 (defparameter *tests* (make-hash-table :test 'equal))
 (defparameter *timeout-seconds* 2)
+(defparameter *auto-send-test-to-emacs-when* :always
+  "Defines when a test is automatically sent to Emacs sting client.
+Possible values are:
+- :never => disables the feature
+- :always => everytime the test is compiled, loaded or dynamically created (default)
+- :changed => everytime the test is compiled, loaded or dynamically created, except the first time.")
+(defparameter *auto-run-test-when* :always
+  "Defines when a test is automatically run.
+Possible values are:
+- :never => disables the feature
+- :always => everytime the test is compiled, loaded or dynamically created (default)
+- :changed => everytime the test is compiled, loaded or dynamically created, except the first time.")
 
 (defun remove-all-tests ()
   (mapcar (lambda (x) (remove-method #'run x))
@@ -54,10 +66,22 @@
 
 (defun add-test (test)
   (declare (type test test))
-  (let ((key (test-hash-table-key test)))
-    (when (gethash key *tests*)
-      (warn "redefinition of test ~a" key))
-    (setf (gethash key *tests*) test)))
+  (let* ((key (test-hash-table-key test))
+         (previous-test (gethash key *tests*)))
+    (setf (gethash key *tests*) test)
+    (when (or (eql *auto-send-test-to-emacs-when* :always)
+              (and previous-test
+                   (eql *auto-send-test-to-emacs-when* :changed)))
+      (send-tests :tests (list test)
+                  :wait? t
+                  :append? t))
+    (when (or (eql *auto-run-test-when* :always)
+              (and previous-test
+                   (eql *auto-run-test-when* :changed)))
+      (if *emacs-client-connected?*
+          (emacs-run-test test)
+          (run-test-with-conditions test)))
+    test))
 
 (defun find-test (test-descriptor)
   (let ((key (test-hash-table-key test-descriptor)))
@@ -92,6 +116,14 @@
 - an EQL specializer on the name of the test
 
 It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))
+
+(defun run-test-with-conditions (test)
+  (let ((report (run test)))
+    (when (typep report 'failure)
+      (restart-case (error (failure-error report))
+        (continue ()
+          :report "Let `run-test-with-conditions' finish and return the report.")))
+    report))
 
 
 #+(and swank sbcl)

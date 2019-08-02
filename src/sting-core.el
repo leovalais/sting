@@ -1,9 +1,24 @@
+(defvar sting-action-at-connection nil
+  "Defines what to do when sting is successfully connected to slime.
+Its values can be:
+- nil (default) => do nothing
+- :load => loads the tests
+- :load-and-run => loads and run the tests.")
+
 (defstruct sting-test
   name package description source-info)
 (defstruct sting-pass-report
   test values)
 (defstruct sting-fail-report
   test kind error timeout-seconds)
+
+(defun sting-test= (a b)
+  (and (typep a 'sting-test)
+       (typep b 'sting-test)
+       (equal (sting-test-name a)
+              (sting-test-name b))
+       (equal (sting-test-package a)
+              (sting-test-package b))))
 
 (defun sting-cl-test-descriptor (test)
   `(cl:cons ',(sting-test-package test)
@@ -43,7 +58,7 @@
                  sting-reports)
         :running))
 
-(defun sting-sort-test ()
+(defun sting-sort-tests ()
   (setq sting-loaded-tests
         (sort sting-loaded-tests
               (lambda (t1 t2) ; returns whether t1 < t2
@@ -76,12 +91,15 @@
                                :error error :timeout-seconds timeout-seconds)))))
 
 
-(defslimefun sting-recieve-tests (tests)
-  (setq sting-loaded-tests
-        (mapcar #'deserialize-test tests))
-  (setq sting-reports (make-hash-table :test 'equal))
-  (setq sting-expanded (make-hash-table))
-  (sting-sort-test)
+(defslimefun sting-recieve-tests (tests &key append?)
+  (let ((tests (mapcar #'deserialize-test tests)))
+    (if append?
+        (dolist (t- tests)
+          (pushnew t- sting-loaded-tests :test #'sting-test=))
+      (setq sting-loaded-tests tests)
+      (setq sting-reports (make-hash-table :test 'equal))
+      (setq sting-expanded (make-hash-table))))
+  (sting-sort-tests)
   (repaint-buffer))
 
 (defslimefun sting-recieve-reports (reports)
@@ -92,6 +110,9 @@
                "All tests passed")))
   (repaint-buffer))
 
+(defslimefun sting-mark-test-as-running-rpc (test)
+  (sting-mark-test-as-running (deserialize-test test))
+  (repaint-buffer))
 
 (defun sting-connect ()
   (interactive)
