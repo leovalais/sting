@@ -26,7 +26,6 @@ Its values can be:
 
 (defun sting-report-test (report)
   (etypecase report
-
     (sting-pass-report (sting-pass-report-test report))
     (sting-fail-report (sting-fail-report-test report))))
 

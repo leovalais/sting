@@ -20,9 +20,13 @@
    (:module "core"
     :components ((:file "assertions")
                  (:file "definitions")
+                 (:file "test-container")
                  (:file "core")))
    (:module "emacs"
     :if-feature (:and :swank :sbcl)
     :components ((:file "emacs")
                  (:file "rpcs")
-                 (:file "redefinitions")))))
+                 (:file "redefinitions")))
+   (:module "hooks"
+    :components ((:file "sbcl-hooks" :if-feature (:and :sbcl :swank))
+                 (:file "no-emacs-hooks" :if-feature (:not :swank))))))

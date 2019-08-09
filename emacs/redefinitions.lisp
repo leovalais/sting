@@ -1,25 +1,5 @@
 (in-package :sting)
 
-(defun add-test (test)
-  (declare (type test test))
-  (let* ((key (test-hash-table-key test))
-         (previous-test (gethash key *tests*)))
-    (setf (gethash key *tests*) test)
-    (when (or (eql *auto-send-test-to-emacs-when* :always)
-              (and previous-test
-                   (eql *auto-send-test-to-emacs-when* :changed)))
-      (send-tests :tests (list test)
-                  :wait? t
-                  :append? t))
-    (when (or (eql *auto-run-test-when* :always)
-              (and previous-test
-                   (eql *auto-run-test-when* :changed)))
-      (if *emacs-client-connected?*
-          (emacs-run-test test)
-          (run-test-with-conditions test)))
-    test))
-
-
 (defun find-snippet-and-offset-and-file-or-buffer ()
   "Returns a plist (:snippet :offset :file) or (:snippet :offset :buffer)
 containing the source information of the form being compiled/loaded at frame

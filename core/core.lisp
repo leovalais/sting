@@ -1,76 +1,29 @@
 (in-package :sting)
 
-(defun test-hash-table-key (test-descriptor)
-  (etypecase test-descriptor
-    (test
-     (cons (test-package test-descriptor)
-           (name test-descriptor)))
-    (symbol
-     (cons (symbolicate (package-name *package*))
-           test-descriptor))
-    (string
-     (cons (symbolicate (package-name *package*))
-           (symbolicate test-descriptor)))
-    ((cons symbol symbol)
-     test-descriptor)
-    ((cons string string)
-     (if-let (package (find-package (symbolicate (car test-descriptor))))
-       (cons (symbolicate (package-name package))
-             (symbolicate (cdr test-descriptor)))
-       (error "could not find the package of test ~s" test-descriptor)))
-    ((cons package symbol)
-     (cons (symbolicate (package-name (car test-descriptor)))
-           (cdr test-descriptor)))))
 
-(defun find-test (test-descriptor)
-  (let ((key (test-hash-table-key test-descriptor)))
-    (gethash key *tests*)))
-
-(defun remove-test (test-descriptor)
-  (let ((key (test-hash-table-key test-descriptor)))
-    ;; TODO: also remove generated run method and function
-    (remhash key *tests*)))
-
-(defun remove-all-tests ()
+(defmethod clear-tests-in :after ((tc test-container))
+  ;; TODO also remove generated functions
   (mapcar (lambda (x) (remove-method #'run x))
-          (closer-mop:generic-function-methods #'run))
-  (setf *tests* (make-hash-table :test 'equal))
-  (values))
+          (closer-mop:generic-function-methods #'run)))
 
-(defun add-test (test)
-  (declare (type test test))
-  (let* ((key (test-hash-table-key test))
-         (previous-test (gethash key *tests*)))
-    (setf (gethash key *tests*) test)
-    (when (or (eql *auto-run-test-when* :always)
-              (and previous-test
-                   (eql *auto-run-test-when* :changed)))
-      (run-test-with-conditions test)))
-  test)
-
+(defmethod remove-test-in :after ((tc test-container) test-descriptor)
+  ;; TODO remove generated run method and function
+  )
 
 (defun run-in-parallel (tests)
   (lparallel:pmapcar #'run tests))
 
 (defun run-all-sequentially ()
-  (let ((reports '()))
-    (maphash-values (lambda (t-)
-                      (push (run t-) reports))
-                    *tests*)
-    reports))
+  (map-tests *tests* #'run))
 
 (defun run-all (&key (parallel t))
   (if parallel
-      (run-in-parallel (hash-table-values *tests*))
+      (run-in-parallel (tests *tests*))
       (run-all-sequentially)))
 
 (defun run-package-sequentially (package)
-  (let ((reports '()))
-    (maphash-values (lambda (t-)
-                      (when (eql (test-package t-) package)
-                        (push (run t-) reports)))
-                    *tests*)
-    reports))
+  (mapcar #'run (remove package (tests *tests*)
+                        :test-not #'eql :key #'test-package)))
 
 (defun run-package (package &key (parallel t))
   (let ((package (etypecase package
@@ -79,7 +32,7 @@
                    (string (symbolicate package))
                    (symbol package))))
     (if parallel
-        (run-in-parallel (remove package (hash-table-values *tests*)
+        (run-in-parallel (remove package (tests *tests*)
                                  :test-not #'eql :key #'test-package))
         (run-package-sequentially package))))
 

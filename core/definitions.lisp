@@ -39,7 +39,6 @@
                     :type (or null number))))
 
 
-(defparameter *tests* (make-hash-table :test 'equal))
 (defparameter *timeout-seconds* 2)
 (defparameter *auto-run-test-when* :changed
   "Defines when a test is automatically run.

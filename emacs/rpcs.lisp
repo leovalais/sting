@@ -4,9 +4,10 @@
 ;;;; Sending data to Emacs
 
 (defun send-tests (&key (tests *tests*) wait? append?)
-  (declare (type (or sequence hash-table) tests)
-           (type boolean wait?))
+  (declare (type (or test-container sequence hash-table) tests)
+           (type boolean wait? append?))
   (let* ((tests (etypecase tests
+                  (test-container (tests tests))
                   (sequence tests)
                   (hash-table (hash-table-values tests))))
          (serialized-tests (map 'list #'serialize tests)))
