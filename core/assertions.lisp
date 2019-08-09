@@ -9,10 +9,6 @@
    (data :initarg :data
          :reader data)))
 
-(define-condition no-error-signalled (assertion-error)
-  ((expected-error :initarg :expected-error
-                   :reader expected-error)))
-
 (defun fail (value test-form description)
   (restart-case (error 'assertion-error :description description
                                         :form test-form

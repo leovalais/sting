@@ -15,8 +15,14 @@
                :trivia)
 
   :serial t
-  :components ((:module "src"
-                :components ((:file "package")
-                             (:file "assertions")
-                             (:file "sting")
-                             (:file "emacs")))))
+  :components
+  ((:file "package")
+   (:module "core"
+    :components ((:file "assertions")
+                 (:file "definitions")
+                 (:file "core")))
+   (:module "emacs"
+    :if-feature (:and :swank :sbcl)
+    :components ((:file "emacs")
+                 (:file "rpcs")
+                 (:file "redefinitions")))))
