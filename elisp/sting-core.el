@@ -1,3 +1,4 @@
+(defvar sting-connected? t)
 (defvar sting-action-at-connection nil
   "Defines what to do when sting is successfully connected to slime.
 Its values can be:
@@ -29,7 +30,6 @@ Its values can be:
     (sting-pass-report (sting-pass-report-test report))
     (sting-fail-report (sting-fail-report-test report))))
 
-(defvar sting-handshaked t)
 (defvar sting-loaded-tests (list))
 (defvar sting-reports (make-hash-table :test 'equal))
 (defvar sting-expanded (make-hash-table))
@@ -119,13 +119,14 @@ Its values can be:
 (defun sting-connect ()
   (interactive)
   (message "sting: handshaking slime...")
-  (setq sting-handshaked
+  (setq sting-connected?
         (condition-case err
             (slime-eval '(sting::handshake))
           (error nil)))
-  (if sting-handshaked
+  (if sting-connected?
       (message "sting successfully connected to slime!")
-    (error "sting failed to handshake with slime")))
+    (error "sting failed to handshake with slime"))
+  sting-connected?)
 
 (defun sting-load-tests ()
   (interactive)
