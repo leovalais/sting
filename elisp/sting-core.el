@@ -165,4 +165,4 @@ Returns the value of that property for that character."
             (pop-to-buffer buffer)
           (find-file-other-window (getf source-info :file)))
         (goto-char (getf source-info :offset)))
-    (error "no source information found for test ~s" test)))
+    (error "no source information found for test %s" test)))

@@ -1,3 +1,32 @@
+;;; sting.el --- Emacs client for the Common Lisp testing library sting  -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2019 Valais Léo
+
+;; Author: Léo <leo.valais97@gmail.com>
+;; Keywords: lisp, convenience, tools
+;; Version: 1.0
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;;
+
+;;; Code:
+
+(load "sting-core")
+
 (defconst sting-result-indicator "⬤")
 (defconst sting-buffer-name "*sting*")
 (defconst sting-buffer-name-regexp "^\\*sting\\*$")
@@ -168,7 +197,5 @@
         (mmm-parse-buffer)))))
 
 
-;; ;; At the very end
-;; (with-current-buffer (sting-buffer)
-;;   ;; (evil-emacs-state 1)
-;;   (read-only-mode))
+(provide 'sting)
+;;; sting.el ends here
