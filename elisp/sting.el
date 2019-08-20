@@ -32,9 +32,6 @@
 (defconst sting-buffer-name-regexp "^\\*sting\\*$")
 
 (defvar sting-show-snippets nil)
-(defvar sting-colorize-snippets nil
-  "WARNING: Highly experimental and very likely to break everything!")
-
 
 (defvar sting-mode-map (make-sparse-keymap))
 (define-key sting-mode-map (kbd "C-c C-c") 'sting-run)
@@ -42,16 +39,8 @@
 
 (define-derived-mode sting-mode fundamental-mode "sting"
   "blah"
-  ;; Useless: Emacs finds it automatically (<mode-name>-map naming).
-  ;; (use-local-map my-mode-map)
-  (sting-connect)
-
-  (when sting-colorize-snippets
-    (mmm-add-classes '((sting-lisp
-                      :submode lisp-mode
-                      :front "```"
-                      :back "'''")))
-    (mmm-mode)))
+  (use-local-map sting-mode-map)
+  (sting-connect))
 
 (add-to-list 'auto-mode-alist `(,sting-buffer-name-regexp . sting-mode))
 
@@ -192,9 +181,7 @@
       (erase-buffer)
       (dolist (test sting-loaded-tests)
         (insert-test test))
-      (goto-char point)
-      (when sting-colorize-snippets
-        (mmm-parse-buffer)))))
+      (goto-char point))))
 
 
 (provide 'sting)
