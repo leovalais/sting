@@ -25,7 +25,14 @@
 
 (defun emacs-run-test (test-descriptor)
   (ensure-emacs-connected)
-  (if-let (test (find-test test-descriptor))
+  (if-let (test (typecase test-descriptor
+                  ;; this typecheck is necessary because of `add-test-in'
+                  ;; :before method which triggers the execution: the new
+                  ;; is not yet added in `*tests*', therefore,
+                  ;; `find-test' would be likely to return the old version
+                  ;; of that test.
+                  (test test-descriptor)
+                  (t (find-test test-descriptor))))
     (progn
       (swank:ed-rpc-no-wait 'sting-mark-test-as-running-rpc (serialize test))
       (let ((report (run test)))
