@@ -13,6 +13,28 @@ Its values can be:
 (defvar sting-ensure-state-hook nil
   "Hook called whenever the validity of sting's state needs to be ensured.")
 
+(defvar sting-locked? nil)
+
+(cl-defun sting-lock (&optional (owner t) reentrant)
+  (message "sting: locked by %s%s" owner (if reentrant " (reentrant)" ""))
+  (if (and sting-locked?
+           (not reentrant))
+      (error "sting is locked. call (sting-unlock) or wait till operation finishes. previously locked owner: %s" sting-locked?)
+    (setq sting-locked? owner)))
+
+(cl-defun sting-unlock (&optional can-fail?)
+  (message "sting: unlocked%s" (if can-fail? " (failures permitted)" ""))
+  (if (or sting-locked?
+          can-fail?)
+      (setq sting-locked? nil)
+    (error "sting is not locked. this is probably due to an unstable state or is a bug. please report it on github.com/leovalais/sting.")))
+
+(defmacro with-sting-lock (owner &rest body)
+  `(unwind-protect (progn
+                     (sting-lock ,(or owner t))
+                     ,@body)
+     (sting-unlock)))
+
 (defstruct sting-test
   name package description source-info)
 (defstruct sting-pass-report
@@ -100,16 +122,17 @@ Its values can be:
   (values))
 
 (defslimefun sting-recieve-tests (tests &key append?)
-  (sting-ensure-state)
-  (let ((tests (mapcar #'deserialize-test tests)))
-    (if append?
-        (dolist (t- tests)
-          (pushnew t- sting-loaded-tests :test #'sting-test=))
-      (setq sting-loaded-tests tests)
-      (setq sting-reports (make-hash-table :test 'equal))
-      (setq sting-expanded (make-hash-table))))
-  (sting-sort-tests)
-  (run-hooks 'sting-update-data-hook))
+  (with-sting-lock sting-recieve-tests
+   (sting-ensure-state)
+   (let ((tests (mapcar #'deserialize-test tests)))
+     (if append?
+         (dolist (t- tests)
+           (pushnew t- sting-loaded-tests :test #'sting-test=))
+       (setq sting-loaded-tests tests)
+       (setq sting-reports (make-hash-table :test 'equal))
+       (setq sting-expanded (make-hash-table))))
+   (sting-sort-tests)
+   (run-hooks 'sting-update-data-hook)))
 
 (defslimefun sting-recieve-reports (reports)
   (sting-ensure-state :bring-buffer? :yes)
@@ -118,30 +141,35 @@ Its values can be:
     (message (if (some #'sting-fail-report-p reports)
                  "Some tests failed"
                "All tests passed")))
-  (run-hooks 'sting-update-data-hook))
+  (run-hooks 'sting-update-data-hook)
+  (sting-unlock))
 
 (defslimefun sting-mark-test-as-running-rpc (test)
   (sting-ensure-state :bring-buffer? :yes)
+  (sting-lock 'sting-mark-test-as-running-rpc)
   (sting-mark-test-as-running (deserialize-test test))
   (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-connect-rpc ()
-  (sting-connect))
+  (with-sting-lock sting-connect-rpc
+   (sting-connect)))
 
 (defun sting-connect ()
   (interactive)
-  (message "sting: handshaking slime...")
-  (setq sting-connected?
-        (condition-case err
-            (slime-eval '(sting::handshake))
-          (error nil)))
-  (if sting-connected?
-      (message "sting successfully connected to slime!")
-    (error "sting failed to handshake with slime"))
-  sting-connected?)
+  (with-sting-lock sting-connect
+   (message "sting: handshaking slime...")
+   (setq sting-connected?
+         (condition-case err
+             (slime-eval '(sting::handshake))
+           (error nil)))
+   (if sting-connected?
+       (message "sting successfully connected to slime!")
+     (error "sting failed to handshake with slime"))
+   sting-connected?))
 
 (defun sting-load-tests ()
   (interactive)
+  (sting-lock 'sting-load-tests)
   (sting-ensure-state)
   (slime-eval-async '(sting::send-tests)))
 
