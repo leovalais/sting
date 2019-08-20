@@ -5,6 +5,11 @@ Its values can be:
 - nil (default) => do nothing
 - :load => loads the tests
 - :load-and-run => loads and run the tests.")
+(defvar sting-loaded-tests (list))
+(defvar sting-reports (make-hash-table :test 'equal))
+(defvar sting-expanded (make-hash-table))
+(defvar sting-update-data-hook nil
+  "Hook called whenever core data has changed. Should update the view buffer.")
 
 (defstruct sting-test
   name package description source-info)
@@ -29,10 +34,6 @@ Its values can be:
   (etypecase report
     (sting-pass-report (sting-pass-report-test report))
     (sting-fail-report (sting-fail-report-test report))))
-
-(defvar sting-loaded-tests (list))
-(defvar sting-reports (make-hash-table :test 'equal))
-(defvar sting-expanded (make-hash-table))
 
 (defun sting-get-report (test)
   (gethash (cons (sting-test-package test)
@@ -99,7 +100,7 @@ Its values can be:
       (setq sting-reports (make-hash-table :test 'equal))
       (setq sting-expanded (make-hash-table))))
   (sting-sort-tests)
-  (repaint-buffer))
+  (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-recieve-reports (reports)
   (let ((reports (mapcar #'deserialize-report reports)))
@@ -107,11 +108,11 @@ Its values can be:
     (message (if (some #'sting-fail-report-p reports)
                  "Some tests failed"
                "All tests passed")))
-  (repaint-buffer))
+  (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-mark-test-as-running-rpc (test)
   (sting-mark-test-as-running (deserialize-test test))
-  (repaint-buffer))
+  (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-connect-rpc ()
   (sting-connect))
@@ -150,7 +151,7 @@ Returns the value of that property for that character."
   (if-let (test (sting-backwards-till-property-found 'sting-test))
       (progn
         (sting-mark-test-as-running test) ; remove its report and changes the indicator
-        (repaint-buffer) ; make these changes effective
+        (run-hooks 'sting-update-data-hook) ; make these changes effective
         (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
       (message "no test found at point")))
 

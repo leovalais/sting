@@ -167,7 +167,7 @@
                                            (let ((test (button-get button 'test)))
                                              (setf (gethash test sting-expanded)
                                                    (not (gethash test sting-expanded)))
-                                             (repaint-buffer))))))
+                                             (run-hooks 'sting-update-data-hook))))))
         ;; put test reference inside the button because Elisp closures...
         (button-put button 'test test)))
     (when (gethash test sting-expanded)
@@ -182,6 +182,8 @@
       (dolist (test sting-loaded-tests)
         (insert-test test))
       (goto-char point))))
+
+(add-hook 'sting-update-data-hook #'repaint-buffer)
 
 
 (provide 'sting)
