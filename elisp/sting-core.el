@@ -113,6 +113,9 @@ Its values can be:
   (sting-mark-test-as-running (deserialize-test test))
   (repaint-buffer))
 
+(defslimefun sting-connect-rpc ()
+  (sting-connect))
+
 (defun sting-connect ()
   (interactive)
   (message "sting: handshaking slime...")

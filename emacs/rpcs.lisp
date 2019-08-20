@@ -3,9 +3,15 @@
 
 ;;;; Sending data to Emacs
 
+(defun ensure-emacs-connected ()
+  (unless *emacs-client-connected?*
+    (swank:ed-rpc 'sting-connect-rpc))
+  (values))
+
 (defun send-tests (&key (tests *tests*) wait? append?)
   (declare (type (or test-container sequence hash-table) tests)
            (type boolean wait? append?))
+  (ensure-emacs-connected)
   (let* ((tests (etypecase tests
                   (test-container (tests tests))
                   (sequence tests)
@@ -18,6 +24,7 @@
                               :append? append?))))
 
 (defun emacs-run-test (test-descriptor)
+  (ensure-emacs-connected)
   (if-let (test (find-test test-descriptor))
     (progn
       (swank:ed-rpc-no-wait 'sting-mark-test-as-running-rpc (serialize test))
