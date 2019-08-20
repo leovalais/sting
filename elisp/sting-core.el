@@ -10,6 +10,8 @@ Its values can be:
 (defvar sting-expanded (make-hash-table))
 (defvar sting-update-data-hook nil
   "Hook called whenever core data has changed. Should update the view buffer.")
+(defvar sting-ensure-state-hook nil
+  "Hook called whenever the validity of sting's state needs to be ensured.")
 
 (defstruct sting-test
   name package description source-info)
@@ -91,7 +93,14 @@ Its values can be:
                                :error error :timeout-seconds timeout-seconds)))))
 
 
+(defun sting-ensure-state (&rest keys)
+  (unless sting-connected?
+    (sting-connect))
+  (run-hook-with-args 'sting-ensure-state-hook keys)
+  (values))
+
 (defslimefun sting-recieve-tests (tests &key append?)
+  (sting-ensure-state)
   (let ((tests (mapcar #'deserialize-test tests)))
     (if append?
         (dolist (t- tests)
@@ -103,6 +112,7 @@ Its values can be:
   (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-recieve-reports (reports)
+  (sting-ensure-state :bring-buffer? :yes)
   (let ((reports (mapcar #'deserialize-report reports)))
     (mapc #'sting-put-report reports)
     (message (if (some #'sting-fail-report-p reports)
@@ -111,6 +121,7 @@ Its values can be:
   (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-mark-test-as-running-rpc (test)
+  (sting-ensure-state :bring-buffer? :yes)
   (sting-mark-test-as-running (deserialize-test test))
   (run-hooks 'sting-update-data-hook))
 
@@ -131,6 +142,7 @@ Its values can be:
 
 (defun sting-load-tests ()
   (interactive)
+  (sting-ensure-state)
   (slime-eval-async '(sting::send-tests)))
 
 (defun sting-backwards-till-property-found (property)

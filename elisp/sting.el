@@ -33,6 +33,14 @@
 
 (defvar sting-show-snippets nil)
 
+(defvar sting-auto-bring-buffer-policy :auto
+  "Determines when to bring the sting buffer automatically.
+Possible values are:
+- :always
+- :auto (default)
+- :never
+The buffer can always be toggled using `sting-toggle-window'.")
+
 (defvar sting-mode-map (make-sparse-keymap))
 (define-key sting-mode-map (kbd "C-c C-c") 'sting-run)
 (define-key sting-mode-map (kbd "C-c C-g") 'sting-open-source-interactive)
@@ -47,6 +55,22 @@
 (global-set-key (kbd "C-c t l") 'sting-load-tests)
 (global-set-key (kbd "C-c t w") 'sting-toggle-window)
 (global-set-key (kbd "C-c t TAB") 'sting-toggle-window)
+
+
+(defun sting-ensure-state-bring-buffer (plist)
+  (ecase (or (getf plist :bring-buffer?)
+             :if-possible)
+    ((:yes :always t)
+     (unless (and (not (eql sting-auto-bring-buffer-policy :never))
+                  (get-buffer-window (sting-buffer)))
+       (sting-toggle-window)))
+    ((:if-possible :auto)
+     (when (and (eql sting-auto-bring-buffer-policy :always)
+                (not (get-buffer-window (sting-buffer))))
+       (sting-toggle-window)))
+    ((:no :never nil))))
+
+(add-hook 'sting-ensure-state-hook #'sting-ensure-state-bring-buffer)
 
 
 (defun sting-buffer ()
