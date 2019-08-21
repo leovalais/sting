@@ -57,6 +57,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
 (global-set-key (kbd "C-c t TAB") 'sting-toggle-window)
 (global-set-key (kbd "C-c t p") 'sting-run-package-interactive)
 (global-set-key (kbd "C-c t a") 'sting-run-all)
+(global-set-key (kbd "C-c t f") 'sting-run-failed)
 
 
 (defun sting-ensure-state-bring-buffer (plist)

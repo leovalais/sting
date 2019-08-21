@@ -171,6 +171,8 @@ Returns the value of that property for that character."
 (defun sting-run-multiple (tests)
   (sting-ensure-tests-loaded)
   (sting-ensure-state :bring-buffer? :yes)
+  (unless tests
+    (error "no test provided"))
   (mapc #'sting-mark-test-as-running tests)
   (run-hooks 'sting-update-data-hook)
   (let ((descriptor-list (mapcar #'sting-cl-test-descriptor tests)))
@@ -204,9 +206,18 @@ Returns the value of that property for that character."
     (sting-run-package selected)))
 
 (defun sting-run-package (package)
-  (sting-ensure-tests-loaded)
   (let ((tests (remove-if-not (lambda (t-)
                                 (string= (sting-test-package t-)
                                          package))
                               sting-loaded-tests)))
+    (sting-run-multiple tests)))
+
+(defun sting-run-failed ()
+  (interactive)
+  (let ((tests '()))
+    (maphash (lambda (- r)
+               (when (sting-fail-report-p r)
+                 (push (sting-fail-report-test r)
+                       tests)))
+             sting-reports)
     (sting-run-multiple tests)))
