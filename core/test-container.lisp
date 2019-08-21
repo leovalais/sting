@@ -8,27 +8,30 @@
     (cons string string)
     (cons package symbol)))
 
-(defun test-hash-table-key (test-descriptor)
-  (etypecase test-descriptor
-    (test
-     (cons (test-package test-descriptor)
-           (name test-descriptor)))
-    (symbol
-     (cons (symbolicate (package-name *package*))
-           test-descriptor))
-    (string
-     (cons (symbolicate (package-name *package*))
-           (symbolicate test-descriptor)))
-    ((cons symbol symbol)
-     test-descriptor)
-    ((cons string string)
-     (if-let (package (find-package (symbolicate (car test-descriptor))))
-       (cons (symbolicate (package-name package))
-             (symbolicate (cdr test-descriptor)))
-       (error "could not find the package of test ~s" test-descriptor)))
-    ((cons package symbol)
-     (cons (symbolicate (package-name (car test-descriptor)))
-           (cdr test-descriptor)))))
+(let ((sting-package (find-package 'sting)))
+  (flet ((string->symbol (s)
+           (intern s sting-package)))
+    (defun test-hash-table-key (test-descriptor)
+      (etypecase test-descriptor
+        (test
+         (cons (test-package test-descriptor)
+               (name test-descriptor)))
+        (symbol
+         (cons (string->symbol (package-name *package*))
+               test-descriptor))
+        (string
+         (cons (string->symbol (package-name *package*))
+               (string->symbol test-descriptor)))
+        ((cons symbol symbol)
+         test-descriptor)
+        ((cons string string)
+         (if-let (package (find-package (string->symbol (car test-descriptor))))
+           (cons (string->symbol (package-name package))
+                 (string->symbol (cdr test-descriptor)))
+           (error "could not find the package of test ~s" test-descriptor)))
+        ((cons package symbol)
+         (cons (string->symbol (package-name (car test-descriptor)))
+               (cdr test-descriptor)))))))
 
 
 (defclass test-container ()
