@@ -169,6 +169,7 @@ Returns the value of that property for that character."
     (message "no test found at point")))
 
 (defun sting-run-multiple (tests)
+  (sting-ensure-tests-loaded)
   (sting-ensure-state :bring-buffer? :yes)
   (mapc #'sting-mark-test-as-running tests)
   (run-hooks 'sting-update-data-hook)
@@ -191,9 +192,12 @@ Returns the value of that property for that character."
         (goto-char (getf source-info :offset)))
     (error "no source information found for test %s" test)))
 
+(defun sting-run-all ()
+  (interactive)
+  (sting-run-multiple sting-loaded-tests))
+
 (defun sting-run-package-interactive ()
   (interactive)
-  (sting-ensure-tests-loaded)
   (let* ((packages (mapcar #'sting-test-package sting-loaded-tests))
          (initial (first packages))
          (selected (completing-read "Package: " packages nil t initial)))
