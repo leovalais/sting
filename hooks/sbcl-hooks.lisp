@@ -15,7 +15,7 @@
               (and test-changed?
                    (eql *auto-run-test-when* :changed)))
       (if *emacs-client-connected?*
-          (emacs-run-test test)
+          (emacs-run (list test))
           (run-test-with-conditions test)))))
 
 

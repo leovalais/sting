@@ -120,9 +120,10 @@ Its values can be:
                "All tests passed")))
   (run-hooks 'sting-update-data-hook))
 
-(defslimefun sting-mark-test-as-running-rpc (test)
+(defslimefun sting-mark-tests-as-running-rpc (tests)
   (sting-ensure-state :bring-buffer? :yes)
-  (sting-mark-test-as-running (deserialize-test test))
+  (let ((tests (mapcar #'deserialize-test tests)))
+    (mapc #'sting-mark-test-as-running tests))
   (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-connect-rpc ()
@@ -145,6 +146,10 @@ Its values can be:
   (sting-ensure-state)
   (slime-eval-async '(sting::send-tests)))
 
+(defun sting-ensure-tests-loaded ()
+  (unless sting-loaded-tests
+    (error "sting: no tests loaded")))
+
 (defun sting-backwards-till-property-found (property)
   "Starts at `point' and moves one character backwards until a character with `property' is found.
 Returns the value of that property for that character."
@@ -156,21 +161,23 @@ Returns the value of that property for that character."
 
 (defun sting-run ()
   (interactive)
-  (unless sting-loaded-tests
-    (error "no tests loaded"))
+  (sting-ensure-tests-loaded)
   ;; Rewind one character back until a header is found (it has the needed property sting-test).
   ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
   (if-let (test (sting-backwards-till-property-found 'sting-test))
-      (progn
-        (sting-mark-test-as-running test) ; remove its report and changes the indicator
-        (run-hooks 'sting-update-data-hook) ; make these changes effective
-        (slime-eval-async `(sting::emacs-run-test ,(sting-cl-test-descriptor test))))
-      (message "no test found at point")))
+      (slime-eval-async `(sting::emacs-run (cl:list ,(sting-cl-test-descriptor test))))
+    (message "no test found at point")))
+
+(defun sting-run-multiple (tests)
+  (sting-ensure-state :bring-buffer? :yes)
+  (mapc #'sting-mark-test-as-running tests)
+  (run-hooks 'sting-update-data-hook)
+  (let ((descriptor-list (mapcar #'sting-cl-test-descriptor tests)))
+    (slime-eval-async `(sting::emacs-run (cl:list ,@descriptor-list)))))
 
 (defun sting-open-source-interactive ()
   (interactive)
-  (unless sting-loaded-tests
-    (error "no tests loaded"))
+  (sting-ensure-tests-loaded)
   (if-let (test (sting-backwards-till-property-found 'sting-test))
       (sting-open-source test)
     (message "no test found at point")))
@@ -183,3 +190,19 @@ Returns the value of that property for that character."
           (find-file-other-window (getf source-info :file)))
         (goto-char (getf source-info :offset)))
     (error "no source information found for test %s" test)))
+
+(defun sting-run-package-interactive ()
+  (interactive)
+  (sting-ensure-tests-loaded)
+  (let* ((packages (mapcar #'sting-test-package sting-loaded-tests))
+         (initial (first packages))
+         (selected (completing-read "Package: " packages nil t initial)))
+    (sting-run-package selected)))
+
+(defun sting-run-package (package)
+  (sting-ensure-tests-loaded)
+  (let ((tests (remove-if-not (lambda (t-)
+                                (string= (sting-test-package t-)
+                                         package))
+                              sting-loaded-tests)))
+    (sting-run-multiple tests)))
