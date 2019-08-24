@@ -94,6 +94,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
 (defface sting-timeout-indicator-face '((t :foreground "#ff9f0a")) "")
 (defface sting-running-indicator-face '((t :foreground "#5e5ce6")) "")
 (defface sting-property-face '((t :underline t)) "")
+(defface sting-lisp-face '((t :foreground "#ffd60a")) "")
 
 (defun insert-newline ()
   (insert "
@@ -106,8 +107,10 @@ The buffer can always be toggled using `sting-toggle-window'.")
   (sting-insert-indentation)
   (insert (propertize (format "%s:" prop) 'face 'sting-property-face))
   (insert " ")
-  (dolist (val values)
-    (insert val)))
+  (let* ((len (+ (length prop) 5))
+         (pad (make-string len ? )))
+    (dolist (val values)
+      (insert (replace-regexp-in-string "\n" (format "\n%s" pad) val)))))
 
 (defun sting-make-simple-button (fun properties &rest text-to-insert)
   (mapc #'insert text-to-insert)
@@ -125,17 +128,16 @@ The buffer can always be toggled using `sting-toggle-window'.")
   (insert-newline)
   (destructuring-bind (prop . value) dc
     (let ((prop (format "%s" prop)))
-      (typecase value
-        (number
-         (sting-insert-property prop (format "%d" value)))
+      (etypecase value
+        (string
+         (sting-insert-property prop value))
         (sting-valued-form
          (sting-insert-property (format "%s form" prop)
-                                (format "%s" (sting-valued-form-form value)))
+                                (propertize (format "%s" (sting-valued-form-form value))
+                                            'face 'sting-lisp-face))
          (insert-newline)
          (sting-insert-property (format "%s value" prop)
-                                (format "%s" (sting-valued-form-value value))))
-        (t
-         (sting-insert-property prop (format "%s" value)))))))
+                                (format "%s" (sting-valued-form-value value))))))))
 
 (defun sting-insert-assertion-error (err)
   (let ((assertion (sting-error-assertion err))
@@ -145,7 +147,9 @@ The buffer can always be toggled using `sting-toggle-window'.")
     (when (and description
                (not (string= description "")))
       (insert-newline)
-      (sting-insert-property "Failure desc." description))
+      (sting-insert-property "Failure desc."
+                             (propertize description
+                                         'face 'font-lock-comment-face)))
     (mapc #'sting-insert-assertion-error-data-cell data)))
 
 (defun sting-insert-test-expansion (test)
@@ -156,8 +160,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
                (not (string= description "")))
       (insert-newline)
       (sting-insert-indentation)
-      (insert (propertize (format "%s" description)
-                          'face 'font-lock-comment-face)))
+      (insert (propertize description 'face 'font-lock-comment-face)))
     (when source-info
       (insert-newline)
       (let ((location (or (getf source-info :buffer)

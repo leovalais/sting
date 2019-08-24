@@ -9,6 +9,12 @@ Possible values are:
 - :changed => everytime the test is compiled, loaded or dynamically created, except the first time.")
 
 
+(defun ppstr (sexp)
+  (subseq (with-output-to-string (out)
+            (pprint sexp out))
+          1))
+
+
 (defgeneric serialize (object))
 
 (defmethod serialize ((test test))
@@ -42,7 +48,8 @@ Possible values are:
 (defmethod serialize ((vf valued-form))
   (list :tag :valued-form
         :value (format nil "~S" (value vf))
-        :form (form vf)))
+        :form (ppstr (form vf))))
+
 
 (defgeneric serialize-assertion-error (err)
   (:method-combination append :most-specific-last))
@@ -50,20 +57,20 @@ Possible values are:
 (defmethod serialize-assertion-error append ((err assertion-error))
   (list :tag :error
         :class (symbol-name (class-name (class-of err)))
-        :assertion (assertion err)
+        :assertion (ppstr (assertion err))
         :description (description err)))
 
 (defmethod serialize-assertion-error append ((err boolean-assertion-error))
   (list :actual (serialize (actual err))
-        :expected (expected err)))
+        :expected (ppstr (expected err))))
 
 (defmethod serialize-assertion-error append ((err no-error-assertion-error))
   (list :actual (serialize (actual err))
-        :expected (expected err)))
+        :expected (ppstr (expected err))))
 
 (defmethod serialize-assertion-error append ((err no-error-assertion-error))
   (list :signalled (serialize (signalled err))
-        :expected (expected err)))
+        :expected (ppstr (expected err))))
 
 (defmethod serialize-assertion-error append ((err equality-assertion-error))
   (list :actual (serialize (actual err))
