@@ -140,10 +140,10 @@ The buffer can always be toggled using `sting-toggle-window'.")
                                 (format "%s" (sting-valued-form-value value))))))))
 
 (defun sting-insert-assertion-error (err)
-  (let ((assertion (sting-error-assertion err))
+  (let ((form (sting-error-form err))
         (description (sting-error-description err))
         (data (sting-error-data err)))
-    (sting-insert-property "Assertion" (format "%s" assertion))
+    (sting-insert-property "Form" (propertize form 'face 'sting-lisp-face))
     (when (and description
                (not (string= description "")))
       (insert-newline)

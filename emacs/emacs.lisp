@@ -58,6 +58,7 @@ Possible values are:
   (list :tag :error
         :class (symbol-name (class-name (class-of err)))
         :assertion (ppstr (assertion err))
+        :form (ppstr (form err))
         :description (description err)))
 
 (defmethod serialize-assertion-error append ((err boolean-assertion-error))

@@ -20,7 +20,7 @@ Its values can be:
 (defstruct sting-fail-report
   test kind error timeout-seconds)
 (defstruct sting-error
-  class assertion description data)
+  class assertion form description data)
 (defstruct sting-valued-form
   value form)
 
@@ -118,17 +118,17 @@ Its values can be:
 
 (defun deserialize-error (err)
   (assert (eql (getf err :tag) :error))
-  (destructuring-bind (&key class assertion description &allow-other-keys)
+  (destructuring-bind (&key class assertion form description &allow-other-keys)
       err
     (mapc (lambda (p)
             (remf err p))
-          '(:tag :class :assertion :description))
+          '(:tag :class :assertion :form :description))
     (let ((data (mapcar (lambda (cons)
                           (destructuring-bind (p . v) cons
                             (cons (upcase (substring (symbol-name p) 1))
                                   (try-deserialize v))))
                         (sting-plist->alist err))))
-      (make-sting-error :class class :assertion assertion
+      (make-sting-error :class class :assertion assertion :form form
                         :description description :data data))))
 
 (defun deserialize-valued-form (vf)

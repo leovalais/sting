@@ -6,7 +6,9 @@
                 :reader description)
    (assertion :initarg :assertion
               :initform 'assert
-              :reader assertion)))
+              :reader assertion)
+   (form :initarg :form
+         :reader form)))
 
 (defclass valued-form ()
   ((value :initarg :value
@@ -19,7 +21,7 @@
     (ignore ()
       :report "Ignores the failed assertion and evaluates it to NIL"
       nil)
-    (use-value (x)
+    #+sbcl (use-value (x)
       :report "Ignores the failed assertion and evaluates it to the given value"
       :interactive sb-kernel::read-evaluated-form
       x)))
@@ -41,6 +43,7 @@
            t
            (fail (make-condition 'boolean-assertion-error
                                  :assertion 'assert
+                                 :form '(assert ,test-form)
                                  :description ,desc
                                  :actual (make-instance 'valued-form
                                                         :value ,x
@@ -53,6 +56,7 @@
        (if ,x
            (fail (make-condition 'boolean-assertion-error
                                  :assertion 'assert-not
+                                 :form '(assert-not ,test-form)
                                  :description ,desc
                                  :actual (make-instance 'valued-form
                                                         :value ,x
@@ -82,6 +86,7 @@
                      (let ((,x ,test-form))
                        (fail (make-condition 'no-error-assertion-error
                                              :assertion 'assert-error
+                                             :form '(assert-error ,test-form)
                                              :description ,desc
                                              :actual (make-instance 'valued-form
                                                                     :value ,x
@@ -123,6 +128,7 @@
            t
            (fail (make-condition 'equality-assertion-error
                                  :assertion 'assert-=
+                                 :form '(assert-= ,expected ,actual)
                                  :description ,desc
                                  :expected (make-instance 'valued-form :value ,e :form ',expected)
                                  :actual (make-instance 'valued-form :value ,a :form ',actual)))))))
@@ -135,6 +141,7 @@
            t
            (fail (make-condition 'inequality-assertion-error
                                  :assertion 'assert-/=
+                                 :form '(assert-/= ,value ,actual)
                                  :description ,desc
                                  :value (make-instance 'valued-form
                                                        :form ',value
@@ -158,6 +165,7 @@
            t
            (fail (make-condition 'cmp-assertion-error
                                  :assertion 'assert-<
+                                 :form '(assert-< ,op-1 ,op-2)
                                  :description ,desc
                                  :operand-1 (make-instance 'valued-form :value ,a :form ',op-1)
                                  :operand-2 (make-instance 'valued-form :value ,b :form ',op-2)))))))
@@ -170,6 +178,7 @@
            t
            (fail (make-condition 'cmp-assertion-error
                                  :assertion 'assert->
+                                 :form '(assert-> ,op-1 ,op-2)
                                  :description ,desc
                                  :operand-1 (make-instance 'valued-form :value ,a :form ',op-1)
                                  :operand-2 (make-instance 'valued-form :value ,b :form ',op-2)))))))
@@ -182,6 +191,7 @@
            t
            (fail (make-condition 'cmp-assertion-error
                                  :assertion 'assert-<=
+                                 :form '(assert-<= ,op-1 ,op-2)
                                  :description ,desc
                                  :operand-1 (make-instance 'valued-form :value ,a :form ',op-1)
                                  :operand-2 (make-instance 'valued-form :value ,b :form ',op-2)))))))
@@ -194,6 +204,7 @@
            t
            (fail (make-condition 'cmp-assertion-error
                                  :assertion 'assert->=
+                                 :form '(assert->= ,op-1 ,op-2)
                                  :description ,desc
                                  :operand-1 (make-instance 'valued-form :value ,a :form ',op-1)
                                  :operand-2 (make-instance 'valued-form :value ,b :form ',op-2)))))))
