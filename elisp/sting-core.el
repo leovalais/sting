@@ -19,6 +19,10 @@ Its values can be:
   test values)
 (defstruct sting-fail-report
   test kind error timeout-seconds)
+(defstruct sting-error
+  class assertion description data)
+(defstruct sting-valued-form
+  value form)
 
 (defun sting-test= (a b)
   (and (typep a 'sting-test)
@@ -73,6 +77,16 @@ Its values can be:
                    ((string-equal pt1 pt2) (string-lessp nt1 nt2))))))))
 
 
+(defun try-deserialize (thing)
+  (typecase thing
+    ((not list) thing)
+    (list
+     (cl-case (getf thing :tag)
+       (:test (deserialize-test thing))
+       ((:pass-report :fail-report) (deserialize-report thing))
+       (:error (deserialize-error thing))
+       (:valued-form (deserialize-valued-form thing))
+       (otherwise thing)))))
 
 (defun deserialize-test (test)
   (assert (eql (getf test :tag) :test))
@@ -90,7 +104,37 @@ Its values can be:
      (destructuring-bind (&key test kind error timeout-seconds &allow-other-keys)
          report
        (make-sting-fail-report :test (deserialize-test test) :kind kind
-                               :error error :timeout-seconds timeout-seconds)))))
+                               :error (if (eql kind :assertion)
+                                          (deserialize-error error)
+                                        error)
+                               :timeout-seconds timeout-seconds)))))
+
+(defun sting-plist->alist (plist)
+  (loop for l = plist then (cddr l)
+        while l
+        for p = (car l)
+        for v = (cadr l)
+        collect (cons p v)))
+
+(defun deserialize-error (err)
+  (assert (eql (getf err :tag) :error))
+  (destructuring-bind (&key class assertion description &allow-other-keys)
+      err
+    (mapc (lambda (p)
+            (remf err p))
+          '(:tag :class :assertion :description))
+    (let ((data (mapcar (lambda (cons)
+                          (destructuring-bind (p . v) cons
+                            (cons (upcase (substring (symbol-name p) 1))
+                                  (try-deserialize v))))
+                        (sting-plist->alist err))))
+      (make-sting-error :class class :assertion assertion
+                        :description description :data data))))
+
+(defun deserialize-valued-form (vf)
+  (assert (eql (getf vf :tag) :valued-form))
+  (destructuring-bind (&key form value &allow-other-keys) vf
+    (make-sting-valued-form :form form :value value)))
 
 
 (defun sting-ensure-state (&rest keys)
@@ -113,6 +157,7 @@ Its values can be:
 
 (defslimefun sting-recieve-reports (reports)
   (sting-ensure-state :bring-buffer? :yes)
+  (message "%s" reports)
   (let ((reports (mapcar #'deserialize-report reports)))
     (mapc #'sting-put-report reports)
     (message (if (some #'sting-fail-report-p reports)

@@ -121,6 +121,33 @@ The buffer can always be toggled using `sting-toggle-window'.")
                         properties)))
     button))
 
+(defun sting-insert-assertion-error-data-cell (dc)
+  (insert-newline)
+  (destructuring-bind (prop . value) dc
+    (let ((prop (format "%s" prop)))
+      (typecase value
+        (number
+         (sting-insert-property prop (format "%d" value)))
+        (sting-valued-form
+         (sting-insert-property (format "%s form" prop)
+                                (format "%s" (sting-valued-form-form value)))
+         (insert-newline)
+         (sting-insert-property (format "%s value" prop)
+                                (format "%s" (sting-valued-form-value value))))
+        (t
+         (sting-insert-property prop (format "%s" value)))))))
+
+(defun sting-insert-assertion-error (err)
+  (let ((assertion (sting-error-assertion err))
+        (description (sting-error-description err))
+        (data (sting-error-data err)))
+    (sting-insert-property "Assertion" (format "%s" assertion))
+    (when (and description
+               (not (string= description "")))
+      (insert-newline)
+      (sting-insert-property "Failure desc." description))
+    (mapc #'sting-insert-assertion-error-data-cell data)))
+
 (defun sting-insert-test-expansion (test)
   (let ((description (sting-test-description test))
         (source-info (sting-test-source-info test))
@@ -160,7 +187,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
                                  "s"))
          (:assertion
           (insert-newline)
-          (sting-insert-property "Error" (sting-fail-report-error report))))))
+          (sting-insert-assertion-error  (sting-fail-report-error report))))))
     (when (and source-info sting-show-snippets)
       (insert-newline)
       (insert "```") (insert-newline)

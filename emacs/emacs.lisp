@@ -30,5 +30,48 @@ Possible values are:
     (list :tag :fail-report
           :test (serialize test)
           :kind kind
-          :error (format nil "~S" failure-error)
+          :error (serialize failure-error)
           :timeout-seconds timeout-seconds)))
+
+(defmethod serialize ((- trivial-timeout:timeout-error))
+  (the string "TIMEOUT-ERROR"))
+
+(defmethod serialize ((err assertion-error))
+  (serialize-assertion-error err))
+
+(defmethod serialize ((vf valued-form))
+  (list :tag :valued-form
+        :value (format nil "~S" (value vf))
+        :form (form vf)))
+
+(defgeneric serialize-assertion-error (err)
+  (:method-combination append :most-specific-last))
+
+(defmethod serialize-assertion-error append ((err assertion-error))
+  (list :tag :error
+        :class (symbol-name (class-name (class-of err)))
+        :assertion (assertion err)
+        :description (description err)))
+
+(defmethod serialize-assertion-error append ((err boolean-assertion-error))
+  (list :actual (serialize (actual err))
+        :expected (expected err)))
+
+(defmethod serialize-assertion-error append ((err no-error-assertion-error))
+  (list :actual (serialize (actual err))
+        :expected (expected err)))
+
+(defmethod serialize-assertion-error append ((err no-error-assertion-error))
+  (list :signalled (serialize (signalled err))
+        :expected (expected err)))
+
+(defmethod serialize-assertion-error append ((err equality-assertion-error))
+  (list :actual (serialize (actual err))
+        :expected (serialize (expected err))))
+
+(defmethod serialize-assertion-error append ((err inequality-assertion-error))
+  (list :value (serialize (value err))))
+
+(defmethod serialize-assertion-error append ((err cmp-assertion-error))
+  (list :operand-1 (serialize (operand-1 err))
+        :operand-2 (serialize (operand-2 err))))
