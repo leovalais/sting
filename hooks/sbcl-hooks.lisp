@@ -9,8 +9,7 @@
               (and test-changed?
                    (eql *auto-send-test-to-emacs-when* :changed)))
       (send-tests :tests (list test)
-                  :wait? t
-                  :append? t))
+                  :wait? t))
     (when (or (eql *auto-run-test-when* :always)
               (and test-changed?
                    (eql *auto-run-test-when* :changed)))

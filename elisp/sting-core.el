@@ -58,17 +58,16 @@
                  sting-reports)
         :running))
 
-(defun sting-sort-tests ()
-  (setq sting-loaded-tests
-        (sort sting-loaded-tests
-              (lambda (t1 t2) ; returns whether t1 < t2
-                (let ((pt1 (sting-test-package t1))
-                      (pt2 (sting-test-package t2))
-                      (nt1 (sting-test-name t1))
-                      (nt2 (sting-test-name t2)))
-                  (cond
-                   ((string-lessp pt1 pt2) t)
-                   ((string-equal pt1 pt2) (string-lessp nt1 nt2))))))))
+(defun sting-sort-tests (tests)
+  (sort tests
+        (lambda (t1 t2) ; returns whether t1 < t2
+          (let ((pt1 (sting-test-package t1))
+                (pt2 (sting-test-package t2))
+                (nt1 (sting-test-name t1))
+                (nt2 (sting-test-name t2)))
+            (cond
+             ((string-lessp pt1 pt2) t)
+             ((string-equal pt1 pt2) (string-lessp nt1 nt2)))))))
 
 
 
@@ -139,16 +138,11 @@
   (run-hook-with-args 'sting-ensure-state-hook keys)
   (values))
 
-(defslimefun sting-recieve-tests (tests &key append?)
+(defslimefun sting-recieve-tests (tests)
   (sting-ensure-state)
-  (let ((tests (mapcar #'deserialize-test tests)))
-    (if append?
-        (dolist (t- tests)
-          (pushnew t- sting-loaded-tests :test #'sting-test=))
-      (setq sting-loaded-tests tests)
-      (setq sting-reports (make-hash-table :test 'equal))
-      (setq sting-expanded (make-hash-table))))
-  (sting-sort-tests)
+  (let ((tests (nreverse (sting-sort-tests (mapcar #'deserialize-test tests)))))
+    (dolist (t- tests)
+      (pushnew t- sting-loaded-tests :test #'sting-test=)))
   (run-hooks 'sting-update-data-hook))
 
 (defslimefun sting-recieve-reports (reports)

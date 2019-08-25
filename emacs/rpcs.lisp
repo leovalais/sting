@@ -32,9 +32,9 @@ signals an error and sends NIL to the client which initiated this handshake."
     (swank:ed-rpc 'sting-connect-rpc))
   (values))
 
-(defun send-tests (&key (tests *tests*) wait? append?)
+(defun send-tests (&key (tests *tests*) wait?)
   (declare (type (or test-container sequence hash-table) tests)
-           (type boolean wait? append?))
+           (type boolean wait?))
   (ensure-emacs-connected)
   (let* ((tests (etypecase tests
                   (test-container (tests tests))
@@ -42,10 +42,8 @@ signals an error and sends NIL to the client which initiated this handshake."
                   (hash-table (hash-table-values tests))))
          (serialized-tests (map 'list #'serialize tests)))
     (if wait?
-        (swank:ed-rpc 'sting-recieve-tests serialized-tests
-                      :append? append?)
-        (swank:ed-rpc-no-wait 'sting-recieve-tests serialized-tests
-                              :append? append?))))
+        (swank:ed-rpc 'sting-recieve-tests serialized-tests)
+        (swank:ed-rpc-no-wait 'sting-recieve-tests serialized-tests))))
 
 (defun emacs-run (test-descriptors)
   (ensure-emacs-connected)
