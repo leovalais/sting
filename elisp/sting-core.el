@@ -1,10 +1,4 @@
 (defvar sting-connected? nil)
-(defvar sting-action-at-connection nil
-  "Defines what to do when sting is successfully connected to slime.
-Its values can be:
-- nil (default) => do nothing
-- :load => loads the tests
-- :load-and-run => loads and run the tests.")
 (defvar sting-loaded-tests (list))
 (defvar sting-reports (make-hash-table :test 'equal))
 (defvar sting-expanded (make-hash-table))
