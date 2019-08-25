@@ -58,3 +58,9 @@ signals an error and sends NIL to the client which initiated this handshake."
                  (serialized-reports (mapcar #'serialize reports)))
             (swank:ed-rpc-no-wait 'sting-recieve-reports serialized-reports)))
         (error "no test found for descriptors ~s" test-descriptors))))
+
+(defun get-package-name-list ()
+  (mapcar #'symbol-name (test-package-list *tests*)))
+
+(defun send-package (package-name)
+  (send-tests :tests (tests-of-package *tests* package-name)))

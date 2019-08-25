@@ -9,29 +9,30 @@
     (cons package symbol)))
 
 (let ((sting-package (find-package 'sting)))
-  (flet ((string->symbol (s)
-           (intern s sting-package)))
-    (defun test-hash-table-key (test-descriptor)
-      (etypecase test-descriptor
-        (test
-         (cons (test-package test-descriptor)
-               (name test-descriptor)))
-        (symbol
-         (cons (string->symbol (package-name *package*))
-               test-descriptor))
-        (string
-         (cons (string->symbol (package-name *package*))
-               (string->symbol test-descriptor)))
-        ((cons symbol symbol)
-         test-descriptor)
-        ((cons string string)
-         (if-let (package (find-package (string->symbol (car test-descriptor))))
-           (cons (string->symbol (package-name package))
-                 (string->symbol (cdr test-descriptor)))
-           (error "could not find the package of test ~s" test-descriptor)))
-        ((cons package symbol)
-         (cons (string->symbol (package-name (car test-descriptor)))
-               (cdr test-descriptor)))))))
+  (defun intern-in-sting (s)
+    (intern s sting-package)))
+
+(defun test-hash-table-key (test-descriptor)
+  (etypecase test-descriptor
+    (test
+     (cons (test-package test-descriptor)
+           (name test-descriptor)))
+    (symbol
+     (cons (intern-in-sting (package-name *package*))
+           test-descriptor))
+    (string
+     (cons (intern-in-sting (package-name *package*))
+           (intern-in-sting test-descriptor)))
+    ((cons symbol symbol)
+     test-descriptor)
+    ((cons string string)
+     (if-let (package (find-package (intern-in-sting (car test-descriptor))))
+       (cons (intern-in-sting (package-name package))
+             (intern-in-sting (cdr test-descriptor)))
+       (error "could not find the package of test ~s" test-descriptor)))
+    ((cons package symbol)
+     (cons (intern-in-sting (package-name (car test-descriptor)))
+           (cdr test-descriptor)))))
 
 
 (defclass test-container ()
@@ -84,6 +85,22 @@
 (defgeneric tests (test-container)
   (:method ((tc test-container))
     (hash-table-values (tc-tests tc))))
+
+(defgeneric test-package-list (test-container)
+  (:method ((tc test-container))
+    (remove-duplicates (mapcar #'test-package
+                               (tests tc)))))
+
+(defgeneric tests-of-package (test-container package)
+  (:method ((tc test-container) package)
+    (let ((package-name (etypecase package
+                          (package (package-name package))
+                          (string (intern-in-sting package))
+                          (symbol package))))
+      (remove-if-not (lambda (%)
+                       (eql (test-package %) package-name))
+                     (tests tc)))))
+
 
 (defparameter *tests* (make-instance 'test-container))
 

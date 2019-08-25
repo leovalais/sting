@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2019 Valais Léo
 
-;; Author: Léo <leo.valais97@gmail.com>
+;; Author: Léo Valais <leo.valais97@gmail.com>
 ;; Keywords: lisp, convenience, tools
 ;; Version: 1.0
 
@@ -52,12 +52,15 @@ The buffer can always be toggled using `sting-toggle-window'.")
 
 (add-to-list 'auto-mode-alist `(,sting-buffer-name-regexp . sting-mode))
 
-(global-set-key (kbd "C-c t l") 'sting-load-tests)
 (global-set-key (kbd "C-c t w") 'sting-toggle-window)
 (global-set-key (kbd "C-c t TAB") 'sting-toggle-window)
 (global-set-key (kbd "C-c t p") 'sting-run-package-interactive)
 (global-set-key (kbd "C-c t a") 'sting-run-all)
 (global-set-key (kbd "C-c t f") 'sting-run-failed)
+(global-set-key (kbd "C-c t l l") 'sting-load-all-tests)
+(global-set-key (kbd "C-c t l a") 'sting-load-all-tests)
+(global-set-key (kbd "C-c t l p") 'sting-load-package-interactive)
+(global-set-key (kbd "C-c t c") 'sting-clear)
 
 
 (defun sting-ensure-state-bring-buffer (plist)
