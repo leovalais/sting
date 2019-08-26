@@ -27,7 +27,7 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
    (lambda ()
      (let* ((data (apply #'append
                          (remove-if #'atom
-                                    (swank-backend:frame-source-location 1)))))
+                                    (swank-backend:frame-source-location 2)))))
        (if (getf data :buffer)
            ;; XXX the returned keyword/value list has an odd number of elements...
            (loop :with buffer :with offset :with snippet
