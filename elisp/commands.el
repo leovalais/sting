@@ -111,3 +111,8 @@ Returns the value of that property for that character."
                        tests)))
              sting-reports)
     (sting-run-multiple tests)))
+
+(defun sting-sort ()
+  (interactive)
+  (setq sting-loaded-tests (sting-sort-tests sting-loaded-tests))
+  (run-hooks 'sting-update-data-hook))
