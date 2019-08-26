@@ -18,7 +18,7 @@
           (run-test-with-conditions test)))))
 
 
-(defun find-snippet-and-offset-and-file-or-buffer ()
+(defun find-source-info ()
   "Returns a plist (:snippet :offset :file) or (:snippet :offset :buffer)
 containing the source information of the form being compiled/loaded at frame
 index 1 in SBCL. Requires Swank.
@@ -49,4 +49,4 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
 
 (define-define-test-hook :before-test-defun (test-gensym &key &allow-other-keys)
   `(setf (source-info ,test-gensym)
-         (find-snippet-and-offset-and-file-or-buffer)))
+         (find-source-info)))
