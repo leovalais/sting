@@ -53,6 +53,7 @@
 
 (defgeneric map-tests (test-container function)
   (:method ((tc test-container) function)
+    (declare (type function function))
     (let ((results '()))
       (maphash-values (lambda (test)
                         (push (funcall function test) results))
@@ -61,6 +62,7 @@
 
 (defgeneric iter-tests (test-container procedure)
   (:method ((tc test-container) procedure)
+    (declare (type function procedure))
     (maphash-values procedure (tc-tests tc))
     (values)))
 

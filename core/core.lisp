@@ -39,6 +39,7 @@
     report))
 
 (defun eval-in-test-runtime (test function)
+  (declare (type function function))
   (handler-case (trivial-timeout:with-timeout (*timeout-seconds*)
                   (let ((values (multiple-value-list (funcall function))))
                     (make-instance 'imotep :test test :eval-values values)))
@@ -58,6 +59,7 @@
 (defparameter *define-test-hooks* (make-hash-table))
 (defun apply-define-test-hook (hook &rest args)
   (mapcar (lambda (f)
+            (declare (type function f))
             (apply f args))
           (gethash hook *define-test-hooks*)))
 (defmacro define-define-test-hook (hook lambda-list &body body)
