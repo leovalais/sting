@@ -58,7 +58,7 @@ signals an error and sends NIL to the client which initiated this handshake."
         (error "no test found for descriptors ~s" test-descriptors))))
 
 (defun get-package-name-list ()
-  (mapcar #'symbol-name (test-package-list *tests*)))
+  (mapcar #'package-name (test-package-list *tests*)))
 
 (defun send-package (package-name)
   (send-tests :tests (tests-of-package *tests* package-name)))

@@ -4,39 +4,22 @@
   '(or
     test
     symbol string
-    (cons symbol symbol)
     (cons string string)
     (cons package symbol)))
 
-(let ((sting-package (find-package 'sting)))
-  (defun intern-in-sting (s)
-    (intern s sting-package)))
-
 (defun test-hash-table-key (test-descriptor)
   (etypecase test-descriptor
-    (test
-     (cons (test-package test-descriptor)
-           (name test-descriptor)))
-    (symbol
-     (cons (intern-in-sting (package-name *package*))
-           test-descriptor))
-    (string
-     (cons (intern-in-sting (package-name *package*))
-           (intern-in-sting test-descriptor)))
-    ((cons symbol symbol)
-     test-descriptor)
-    ((cons string string)
-     (if-let (package (find-package (intern-in-sting (car test-descriptor))))
-       (cons (intern-in-sting (package-name package))
-             (intern-in-sting (cdr test-descriptor)))
-       (error "could not find the package of test ~s" test-descriptor)))
-    ((cons package symbol)
-     (cons (intern-in-sting (package-name (car test-descriptor)))
-           (cdr test-descriptor)))))
+    (test   (name test-descriptor))
+    (symbol test-descriptor)
+    (string (intern test-descriptor *package*))
+    ((or (cons string string)
+         (cons package symbol))
+     (intern (cdr test-descriptor)
+             (car test-descriptor)))))
 
 
 (defclass test-container ()
-  ((tests :initform (make-hash-table :test 'equal)
+  ((tests :initform (make-hash-table)
           :reader tc-tests
           :type hash-table)))
 
@@ -51,13 +34,12 @@
   (:method ((tc test-container) test-descriptor)
     (with-slots (tests) tc
       (let ((key (test-hash-table-key test-descriptor)))
-        ;; TODO: also remove generated run method and function
         (remhash key tests)))))
 
 (defgeneric clear-tests-in (test-container)
   (:method ((tc test-container))
     (with-slots (tests) tc
-      (setf tests (make-hash-table :test 'equal))
+      (setf tests (make-hash-table))
       (values))))
 
 (defgeneric add-test-in (test-container test)
@@ -93,12 +75,11 @@
 
 (defgeneric tests-of-package (test-container package)
   (:method ((tc test-container) package)
-    (let ((package-name (etypecase package
-                          (package (package-name package))
-                          (string (intern-in-sting package))
-                          (symbol package))))
-      (remove-if-not (lambda (%)
-                       (eql (test-package %) package-name))
+    (let ((package (etypecase package
+                     (package package)
+                     ((or string symbol) (find-package package)))))
+      (remove-if-not (lambda (t-)
+                       (eql (test-package t-) package))
                      (tests tc)))))
 
 

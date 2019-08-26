@@ -47,6 +47,6 @@ Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtrac
                data
              (list :file file :offset (1+ position) :snippet snippet)))))))
 
-(define-define-test-hook :before-run-defmethod (test-gensym &key &allow-other-keys)
+(define-define-test-hook :before-test-defun (test-gensym &key &allow-other-keys)
   `(setf (source-info ,test-gensym)
          (find-snippet-and-offset-and-file-or-buffer)))

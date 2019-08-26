@@ -1,14 +1,10 @@
 (in-package :sting)
 
-
-(defmethod clear-tests-in :after ((tc test-container))
-  ;; TODO also remove generated functions
-  (mapcar (lambda (x) (remove-method #'run x))
-          (closer-mop:generic-function-methods #'run)))
-
-(defmethod remove-test-in :after ((tc test-container) test-descriptor)
-  ;; TODO remove generated run method and function
-  )
+(defun run (test)
+  (with-slots (name) test
+    (if (fboundp name)
+        (funcall (symbol-function (name test)))
+        (error "test ~S has no associated function named ~S" test name))))
 
 (defun run-in-parallel (tests)
   (lparallel:pmapcar #'run tests))
@@ -27,10 +23,8 @@
 
 (defun run-package (package &key (parallel t))
   (let ((package (etypecase package
-                   (package (symbolicate (package-name package)))
-                   (keyword (symbolicate (symbol-name package)))
-                   (string (symbolicate package))
-                   (symbol package))))
+                   (package package)
+                   ((or string symbol) (find-package package)))))
     (if parallel
         (run-in-parallel (remove package (tests *tests*)
                                  :test-not #'eql :key #'test-package))
@@ -73,21 +67,16 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun create-test (name initargs body)
-    (with-gensyms (test test-parameter)
+    (with-gensyms (test)
       `(eval-when (:load-toplevel :execute)
          (let ((,test (make-instance 'test
                                      :name ',name
-                                     :package (symbolicate (package-name *package*))
                                      ,@initargs)))
            (flet ((test () ,test))
              (declare (ignorable (function test)))
-             ,@(apply-define-test-hook :before-run-defmethod test :name name :initargs initargs)
-             (defmethod run ((,test-parameter (eql ,test)))
-               (eval-in-test-runtime ,test (lambda () ,@body)))
-             ,@(apply-define-test-hook :after-run-defmethod test :name name :initargs initargs)
              ,@(apply-define-test-hook :before-test-defun test :name name :initargs initargs)
              (defun ,name ()
-               (run ,test))
+               (eval-in-test-runtime ,test (lambda () ,@body)))
              ,@(apply-define-test-hook :after-test-defun test :name name :initargs initargs)
              ,@(apply-define-test-hook :before-add-test test :name name :initargs initargs)
              (add-test ,test)

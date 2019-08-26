@@ -26,6 +26,7 @@
 ;;; Code:
 
 (load "sting-core")
+(load "commands")
 
 (defconst sting-result-indicator "⬤")
 (defconst sting-buffer-name "*sting*")

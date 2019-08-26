@@ -5,9 +5,6 @@
          :initform (error "a test must have a name")
          :reader name
          :type (and symbol (not keyword)))
-   (package :initarg :package
-            :reader test-package
-            :type symbol)
    (description :initarg :description
                 :initform ""
                 :accessor description
@@ -15,6 +12,10 @@
    (source-info :initarg :source-info
                 :accessor source-info
                 :type list)))
+
+(defgeneric test-package (test)
+  (:method ((test test))
+    (find-package (symbol-package (name test)))))
 
 (defclass report ()
   ((test :initarg :test
@@ -46,11 +47,3 @@ Possible values are:
 - :never => disables the feature
 - :always => everytime the test is compiled, loaded or dynamically created
 - :changed => everytime the test is compiled, loaded or dynamically created, except the first time (default)")
-
-
-(defgeneric run (test)
-  (:documentation "Executes the content of the given `test'.
-`test' can be:
-- an instance of a subtype of `sting:test'
-- an EQL specializer on the name of the test
-It returns a `sting:report' (see `sting:imotep' and `sting:failure')."))

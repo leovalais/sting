@@ -18,10 +18,10 @@ Possible values are:
 (defgeneric serialize (object))
 
 (defmethod serialize ((test test))
-  (with-slots (name package description source-info) test
+  (with-slots (name description source-info) test
     (list :tag :test
           :name (symbol-name name)
-          :package (symbol-name package)
+          :package (package-name (symbol-package name))
           :description description
           :source-info source-info)))
 
