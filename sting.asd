@@ -11,8 +11,7 @@
   :depends-on (:alexandria
                :trivial-timeout
                :lparallel
-               :closer-mop
-               :trivia)
+               :closer-mop)
 
   :serial t
   :components
