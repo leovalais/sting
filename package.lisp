@@ -18,6 +18,8 @@
            run-package
            run-test-with-conditions
            define-test
+           define-before
+           define-after
 
            assertion-error
            valued-form

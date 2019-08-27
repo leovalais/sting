@@ -3,7 +3,8 @@
 (defun run (test)
   (with-slots (name) test
     (if (fboundp name)
-        (funcall (symbol-function (name test)))
+        (run-with-hooks test *test-hooks*
+                        (symbol-function (name test)))
         (error "test ~S has no associated function named ~S" test name))))
 
 (defun run-in-parallel (tests)
@@ -93,3 +94,30 @@
             :appending decl :into initargs
             :finally (return (values initargs b)))
     (create-test name initargs body)))
+
+
+(defun parse-filter (filter)
+  (etypecase filter
+    ((member nil t) '(make-instance 'test-hook-filter))
+    (symbol `(make-instance 'explicit-tests-filter
+                            :tests (list ,filter)))
+    (list
+     (ecase (first filter)
+       (:package `(make-instance 'package-filter
+                                 :package (find-package ,(second filter))))
+       (:predicate `(make-instance 'predicate-filter
+                                   :predicate #',(second filter)))
+       (:list `(make-instance 'test-hook-filter
+                              :tests (list ,@(mapcar (lambda (s)
+                                                       `(quote ,s))
+                                                     (rest filter)))))))))
+
+(defmacro define-before (filter &body body)
+  `(add-hook *test-hooks*
+             (,@(parse-filter filter) :hook (lambda () ,@body))
+             :before))
+
+(defmacro define-after (filter &body body)
+  `(add-hook *test-hooks*
+             (,@(parse-filter filter) :hook (lambda () ,@body))
+             :after))

@@ -19,6 +19,8 @@
    (:module "core"
     :components ((:file "assertions")
                  (:file "definitions")
+                 (:file "hook-filters")
+                 (:file "hook-filter-container")
                  (:file "test-container")
                  (:file "core")))
    (:module "emacs"
