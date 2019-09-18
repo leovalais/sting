@@ -3,8 +3,8 @@
 (defun run (test)
   (with-slots (name) test
     (if (fboundp name)
-        (run-with-hooks test *test-hooks*
-                        (symbol-function (name test)))
+        (run-with-fixtures test *fixtures*
+                           (symbol-function (name test)))
         (error "test ~S has no associated function named ~S" test name))))
 
 (defun run-in-parallel (tests)
@@ -96,28 +96,28 @@
     (create-test name initargs body)))
 
 
-(defun parse-filter (filter)
-  (etypecase filter
-    ((member nil t) '(make-instance 'test-hook-filter))
-    (symbol `(make-instance 'explicit-tests-filter
-                            :tests (list ,filter)))
+(defun parse-fixture-decl (fixture-decl)
+  (etypecase fixture-decl
+    ((member nil t) '(make-instance 'fixture))
+    (symbol `(make-instance 'explicit-fixture
+                            :tests (list ,fixture-decl)))
     (list
-     (ecase (first filter)
-       (:package `(make-instance 'package-filter
-                                 :package (find-package ,(second filter))))
-       (:predicate `(make-instance 'predicate-filter
-                                   :predicate #',(second filter)))
-       (:list `(make-instance 'test-hook-filter
-                              :tests (list ,@(mapcar (lambda (s)
-                                                       `(quote ,s))
-                                                     (rest filter)))))))))
+     (ecase (first fixture-decl)
+       (:package `(make-instance 'package-fixture
+                                 :package (find-package ,(second fixture-decl))))
+       (:predicate `(make-instance 'predicate-fixture
+                                   :predicate #',(second fixture-decl)))
+       (:tests `(make-instance 'explicit-fixture
+                               :tests (list ,@(mapcar (lambda (s)
+                                                        `(quote ,s))
+                                                      (rest fixture-decl)))))))))
 
-(defmacro define-before (filter &body body)
-  `(add-hook *test-hooks*
-             (,@(parse-filter filter) :hook (lambda () ,@body))
-             :before))
+(defmacro define-before (fixture &body body)
+  `(add-fixture *fixtures*
+                (,@(parse-fixture-decl fixture) :hook (lambda () ,@body))
+                :before))
 
-(defmacro define-after (filter &body body)
-  `(add-hook *test-hooks*
-             (,@(parse-filter filter) :hook (lambda () ,@body))
-             :after))
+(defmacro define-after (fixture &body body)
+  `(add-fixture *fixtures*
+                (,@(parse-fixture-decl fixture) :hook (lambda () ,@body))
+                :after))
