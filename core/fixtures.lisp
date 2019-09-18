@@ -45,16 +45,16 @@
 
 (defclass fixture-container ()
   ((before :initform (make-array 0
-                                 :element-type 'fixture-container
+                                 :element-type 'fixture
                                  :adjustable t
                                  :fill-pointer 0)
-           :type (array fixture-filter 1)
+           :type (array fixture 1)
            :reader before)
    (after :initform (make-array 0
-                                :element-type 'fixture-container
+                                :element-type 'fixture
                                 :adjustable t
                                 :fill-pointer 0)
-          :type (array fixture-filter 1)
+          :type (array fixture 1)
           :reader after)))
 
 (defgeneric add-fixture (fixture-container fixture kind)
@@ -77,4 +77,4 @@
               :do (apply-fixture f))
       (values-list values))))
 
-(defparameter *fixtures* (make-instance 'fixtures-container))
+(defparameter *fixtures* (make-instance 'fixture-container))
