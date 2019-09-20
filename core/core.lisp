@@ -107,17 +107,17 @@
                                  :package (find-package ,(second fixture-decl))))
        (:predicate `(make-instance 'predicate-fixture
                                    :predicate #',(second fixture-decl)))
-       (:tests `(make-instance 'explicit-fixture
-                               :tests (list ,@(mapcar (lambda (s)
-                                                        `(quote ,s))
-                                                      (rest fixture-decl)))))))))
+       (:list `(make-instance 'explicit-fixture
+                              :tests (list ,@(mapcar (lambda (s)
+                                                       `(quote ,s))
+                                                     (rest fixture-decl)))))))))
 
 (defmacro define-before (fixture &body body)
-  `(add-fixture *fixtures*
-                (,@(parse-fixture-decl fixture) :hook (lambda () ,@body))
+  `(set-fixture *fixtures*
+                (,@(parse-fixture-decl fixture) :fixture (lambda () ,@body))
                 :before))
 
 (defmacro define-after (fixture &body body)
-  `(add-fixture *fixtures*
-                (,@(parse-fixture-decl fixture) :hook (lambda () ,@body))
+  `(set-fixture *fixtures*
+                (,@(parse-fixture-decl fixture) :fixture (lambda () ,@body))
                 :after))

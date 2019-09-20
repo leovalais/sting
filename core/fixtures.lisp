@@ -17,6 +17,10 @@
               :type function)))
 
 (defgeneric fixture-applicable? (fixture test))
+(defgeneric fixture= (f g)
+  (:method (f g)
+    nil))
+
 
 (defmethod fixture-applicable? ((fixture fixture) (test test))
   t)
@@ -34,6 +38,21 @@
 (defmethod fixture-applicable? ((fixture predicate-fixture) (test test))
   (funcall (slot-value fixture 'predicate)
            test))
+
+
+(defmethod fixture= ((f fixture) (g fixture))
+  t)
+
+(defmethod fixture= ((f package-fixture) (g package-fixture))
+  (eql (slot-value f 'package)
+       (slot-value g 'package)))
+
+(defmethod fixture= ((f explicit-fixture) (g explicit-fixture))
+  (equal (slot-value f 'tests)
+         (slot-value g 'tests)))
+
+(defmethod fixture= ((f predicate-fixture) (g predicate-fixture))
+  (error "cannot compare two predicate-fixtures"))
 
 
 (defgeneric apply-fixture (fixture)
@@ -57,13 +76,28 @@
           :type (array fixture 1)
           :reader after)))
 
-(defgeneric add-fixture (fixture-container fixture kind)
+(defun set-fixture-in-array (array fixture kind)
+  (declare (type (array fixture 1) array)
+           (type fixture fixture)
+           (type (member :before :after) kind))
+  (if-let (position (position fixture array :test #'fixture=))
+    (progn
+      (warn "redefining ~a fixture ~a" kind fixture)
+      (setf (aref array position) fixture)
+      t)
+    (progn
+      (vector-push-extend fixture array)
+      nil)))
+
+(defgeneric set-fixture (fixture-container fixture kind)
   (:method ((fc fixture-container) (fixture fixture) kind)
     (declare (type (member :before :after) kind))
-    (ecase kind
-      (:before (vector-push-extend fixture (before fc)))
-      (:after (vector-push-extend fixture (after fc))))
-    fixture))
+    (values fixture
+            (set-fixture-in-array (ecase kind
+                                    (:before (before fc))
+                                    (:after (after fc)))
+                                  fixture
+                                  kind))))
 
 (defgeneric run-with-fixtures (test fixture-container function)
   (:method ((test test) (fc fixture-container) function)
