@@ -25,6 +25,7 @@
 
 ;;; Code:
 
+(load "generic-rpc")
 (load "sting-core")
 (load "commands")
 

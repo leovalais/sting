@@ -138,14 +138,14 @@
   (run-hook-with-args 'sting-ensure-state-hook keys)
   (values))
 
-(defslimefun sting-recieve-tests (tests)
+(define-rpc sting-recieve-tests (tests)
   (sting-ensure-state)
   (let ((tests (nreverse (sting-sort-tests (mapcar #'deserialize-test tests)))))
     (dolist (t- tests)
       (pushnew t- sting-loaded-tests :test #'sting-test=)))
   (run-hooks 'sting-update-data-hook))
 
-(defslimefun sting-recieve-reports (reports)
+(define-rpc sting-recieve-reports (reports)
   (sting-ensure-state :bring-buffer? :yes)
   (message "%s" reports)
   (let ((reports (mapcar #'deserialize-report reports)))
@@ -155,11 +155,11 @@
                "All tests passed")))
   (run-hooks 'sting-update-data-hook))
 
-(defslimefun sting-mark-tests-as-running-rpc (tests)
+(define-rpc sting-mark-tests-as-running-rpc (tests)
   (sting-ensure-state :bring-buffer? :yes)
   (let ((tests (mapcar #'deserialize-test tests)))
     (mapc #'sting-mark-test-as-running tests))
   (run-hooks 'sting-update-data-hook))
 
-(defslimefun sting-connect-rpc ()
+(define-rpc sting-connect-rpc ()
   (sting-connect))

@@ -1,13 +1,13 @@
 (defun sting-connect ()
   (interactive)
-  (message "sting: handshaking slime...")
+  (message "sting: handshaking Lisp backend...")
   (setq sting-connected?
         (condition-case err
-            (slime-eval '(sting::handshake))
+            (funcall-rpc 'sting::handshake)
           (error nil)))
   (if sting-connected?
-      (message "sting successfully connected to slime!")
-    (error "sting failed to handshake with slime"))
+      (message "sting successfully connected to Lisp backend!")
+    (error "sting failed to handshake with Lisp backend"))
   sting-connected?)
 
 (defun sting-clear ()
@@ -20,12 +20,12 @@
 (defun sting-load-all-tests ()
   (interactive)
   (sting-ensure-state)
-  (slime-eval-async '(sting::send-tests)))
+  (funcall-rpc-no-wait 'sting::send-tests))
 
 (defun sting-load-package-interactive ()
   (interactive)
   (sting-ensure-state)
-  (let* ((packages (slime-eval '(sting::get-package-name-list)))
+  (let* ((packages (funcall-rpc 'sting::get-package-name-list))
          (initial (first packages)))
     (if packages
         (let ((selected (completing-read "Package: " packages nil t initial)))
@@ -34,7 +34,7 @@
 
 (defun sting-load-package (package)
   (sting-ensure-state)
-  (slime-eval-async `(sting::send-package ,package)))
+  (funcall-rpc-no-wait 'sting::send-package package))
 
 (defun sting-ensure-tests-loaded ()
   (unless sting-loaded-tests
@@ -55,7 +55,7 @@ Returns the value of that property for that character."
   ;; Rewind one character back until a header is found (it has the needed property sting-test).
   ;; That way, we can C-c C-c inside the description of an expanded test and still having it run again.
   (if-let (test (sting-backwards-till-property-found 'sting-test))
-      (slime-eval-async `(sting::emacs-run (cl:list ,(sting-cl-test-descriptor test))))
+      (funcall-rpc-no-wait 'sting::emacs-run `(cl:list ,(sting-cl-test-descriptor test)))
     (message "no test found at point")))
 
 (defun sting-run-multiple (tests)
@@ -66,7 +66,7 @@ Returns the value of that property for that character."
   (mapc #'sting-mark-test-as-running tests)
   (run-hooks 'sting-update-data-hook)
   (let ((descriptor-list (mapcar #'sting-cl-test-descriptor tests)))
-    (slime-eval-async `(sting::emacs-run (cl:list ,@descriptor-list)))))
+    (funcall-rpc-no-wait 'sting::emacs-run `(cl:list ,@descriptor-list))))
 
 (defun sting-open-source-interactive ()
   (interactive)
