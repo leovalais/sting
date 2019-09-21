@@ -90,7 +90,9 @@ Returns the value of that property for that character."
 
 (defun sting-run-package-interactive ()
   (interactive)
-  (let* ((packages (mapcar #'sting-test-package sting-loaded-tests))
+  (let* ((packages (remove-duplicates
+                    (mapcar #'sting-test-package sting-loaded-tests)
+                    :test #'string=))
          (initial (first packages))
          (selected (completing-read "Package: " packages nil t initial)))
     (sting-run-package selected)))
