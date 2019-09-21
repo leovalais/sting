@@ -18,6 +18,14 @@
 (defstruct sting-valued-form
   value form)
 
+(defun sting-failed-report-assertion-p (thing)
+  (and (sting-fail-report-p thing)
+       (eql (sting-fail-report-kind thing) :assertion)))
+
+(defun sting-failed-report-timeout-p (thing)
+  (and (sting-fail-report-p thing)
+       (eql (sting-fail-report-kind thing) :timeout)))
+
 (defun sting-test= (a b)
   (and (typep a 'sting-test)
        (typep b 'sting-test)

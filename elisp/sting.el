@@ -238,13 +238,32 @@ The buffer can always be toggled using `sting-toggle-window'.")
       (insert-newline))
     (insert-newline)))
 
+(defun sting-insert-stats ()
+  (let* ((total (length sting-loaded-tests))
+         (reports (hash-table-values sting-reports))
+         (passed (count-if #'sting-pass-report-p reports))
+         (assertions (count-if #'sting-failed-report-assertion-p reports))
+         (timeouts (count-if #'sting-failed-report-timeout-p reports))
+         (ratio (/ (float passed) (float total))))
+    (flet ((colored (n face)
+                    (propertize (format "%d" n)
+                                'face face)))
+      (setq mode-line-misc-info
+            (format "%s·%s·%s/%d (%3.1f%%)"
+                    (colored passed 'sting-success-indicator-face)
+                    (colored assertions 'sting-failure-indicator-face)
+                    (colored timeouts 'sting-timeout-indicator-face)
+                    total
+                    (* 100 ratio))))))
+
 (defun repaint-buffer ()
   (with-current-buffer (sting-buffer)
     (let ((point (point)))
       (erase-buffer)
       (dolist (test sting-loaded-tests)
         (insert-test test))
-      (goto-char point))))
+      (goto-char point))
+    (sting-insert-stats)))
 
 (add-hook 'sting-update-data-hook #'repaint-buffer)
 
