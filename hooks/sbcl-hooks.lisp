@@ -1,23 +1,5 @@
 (in-package :sting)
 
-(defmethod add-test-in :before ((tc test-container) (test test))
-  (let* ((key (test-hash-table-key test))
-         (previous-test (gethash key (tc-tests tc)))
-         (test-changed? (and previous-test
-                             (not (eql previous-test test)))))
-    (when (or (eql *auto-send-test-to-emacs-when* :always)
-              (and test-changed?
-                   (eql *auto-send-test-to-emacs-when* :changed)))
-      (send-tests :tests (list test)
-                  :wait? t))
-    (when (or (eql *auto-run-test-when* :always)
-              (and test-changed?
-                   (eql *auto-run-test-when* :changed)))
-      (if *emacs-client-connected?*
-          (emacs-run (list test))
-          (run-test-with-conditions test)))))
-
-
 (locally (declare (optimize (debug 0) (safety 0)
                             (compilation-speed 0)
                             (space 3) (speed 3)))
@@ -51,7 +33,3 @@ index 1 in SBCL. Requires Swank.
 Reference: https://www.snellman.net/blog/archive/2007-12-19-pretty-sbcl-backtraces.html"
     #+swank (swank-backend::call-with-debugging-environment #'inspect-stack-frame)
     #+slynk (slynk-backend::call-with-debugging-environment #'inspect-stack-frame)))
-
-(define-define-test-hook :before-test-defun (test-gensym &key &allow-other-keys)
-  `(setf (source-info ,test-gensym)
-         (find-source-info)))

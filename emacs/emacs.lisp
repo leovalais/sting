@@ -1,12 +1,6 @@
 (in-package :sting)
 
 (defparameter *emacs-client-connected?* nil)
-(defparameter *auto-send-test-to-emacs-when* :always
-  "Defines when a test is automatically sent to Emacs sting client.
-Possible values are:
-- :never => disables the feature
-- :always => everytime the test is compiled, loaded or dynamically created (default)
-- :changed => everytime the test is compiled, loaded or dynamically created, except the first time.")
 
 
 (defun ppstr (sexp)

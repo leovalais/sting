@@ -6,7 +6,7 @@
            imotep
            failure
            *timeout-seconds*
-           *auto-run-test-when*
+           *auto-run*
 
            test-descriptor
            find-test
@@ -39,5 +39,4 @@
            assert-<=
            assert->=
 
-           *emacs-client-connected?*
-           *auto-send-test-to-emacs-when*))
+           *emacs-client-connected?*))

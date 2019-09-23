@@ -155,7 +155,6 @@
 
 (define-rpc sting-recieve-reports (reports)
   (sting-ensure-state :bring-buffer? :yes)
-  (message "%s" reports)
   (let ((reports (mapcar #'deserialize-report reports)))
     (mapc #'sting-put-report reports)
     (message (if (some #'sting-fail-report-p reports)

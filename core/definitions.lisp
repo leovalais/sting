@@ -41,9 +41,6 @@
 
 
 (defparameter *timeout-seconds* 2)
-(defparameter *auto-run-test-when* :changed
-  "Defines when a test is automatically run.
-Possible values are:
-- :never => disables the feature
-- :always => everytime the test is compiled, loaded or dynamically created
-- :changed => everytime the test is compiled, loaded or dynamically created, except the first time (default)")
+(defparameter *auto-run* t
+  "Defines whether a test is automatically executed whenever it is compiled
+whithin SLIME/SLY.")

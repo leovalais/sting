@@ -28,5 +28,6 @@
                  (:file "emacs")
                  (:file "rpcs")))
    (:module "hooks"
-    :components ((:file "sbcl-hooks" :if-feature (:and :sbcl (:or :swank :slynk)))
+    :components ((:file "common-hooks" :if-feature (:or :swank :slynk))
+                 (:file "sbcl-hooks" :if-feature (:and :sbcl (:or :swank :slynk)))
                  (:file "no-emacs-hooks" :if-feature (:not (:or :swank :slynk)))))))
