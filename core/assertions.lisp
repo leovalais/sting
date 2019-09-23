@@ -115,10 +115,18 @@
            :type valued-form
            :reader actual)))
 
-(define-condition inequality-assertion-error (assertion-error)
-  ((value :initarg :value
-          :type valued-form
-          :reader value)))
+(defmacro assert-equal (expected actual &key (desc ""))
+  (with-gensyms (e a)
+    `(let ((,e ,expected)
+           (,a ,actual))
+       (if (equal ,e ,a)
+           t
+           (fail (make-condition 'equality-assertion-error
+                                 :assertion 'assert-equal
+                                 :form '(assert-equal ,expected ,actual)
+                                 :description ,desc
+                                 :expected (make-instance 'valued-form :value ,e :form ',expected)
+                                 :actual (make-instance 'valued-form :value ,a :form ',actual)))))))
 
 (defmacro assert-= (expected actual &key (desc ""))
   (with-gensyms (e a)
@@ -132,6 +140,18 @@
                                  :description ,desc
                                  :expected (make-instance 'valued-form :value ,e :form ',expected)
                                  :actual (make-instance 'valued-form :value ,a :form ',actual)))))))
+
+(defmacro assert-values (expected actual &key (desc ""))
+  `(assert-equal (multiple-value-list ,expected)
+                 (multiple-value-list ,actual)
+                 :desc ,desc))
+
+
+
+(define-condition inequality-assertion-error (assertion-error)
+  ((value :initarg :value
+          :type valued-form
+          :reader value)))
 
 (defmacro assert-/= (value actual &key (desc ""))
   (with-gensyms (v a)
