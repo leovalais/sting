@@ -24,7 +24,7 @@
                  (:file "core")))
    (:module "emacs"
     :if-feature (:and (:or :swank :slynk) :sbcl)
-    :components ((:file "generic-rpcs")
+    :components ((:file "generic-rpc")
                  (:file "emacs")
                  (:file "rpcs")))
    (:module "hooks"

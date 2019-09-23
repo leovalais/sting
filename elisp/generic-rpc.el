@@ -5,16 +5,17 @@
 
 (setq sly-enable-evaluate-in-emacs t)
 
-(defvar sting-lisp-backend :slynk
-  "Tells Sting which backend it should try to use. Possible values are:
+(eval-when-compile
+  (defvar sting-lisp-backend :slynk
+    "Tells Sting which backend it should try to use. Possible values are:
 - :swank (for SLIME)
 - :slynk (defalut, for SLY)")
 
-(defmacro define-rpc (name lambda-list &rest body)
-  "Defines the RPC function `NAME'."
-  (ecase sting-lisp-backend
-    (:swank `(defslimefun ,name ,lambda-list ,@body))
-    (:slynk `(defun ,name ,lambda-list ,@body))))
+  (defmacro define-rpc (name lambda-list &rest body)
+    "Defines the RPC function `NAME'."
+    (ecase sting-lisp-backend
+      (:swank `(defslimefun ,name ,lambda-list ,@body))
+      (:slynk `(defun ,name ,lambda-list ,@body)))))
 
 (defun funcall-rpc (name &rest args)
   "Calls the RPC function `NAME' with the given `ARGS'.
