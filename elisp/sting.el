@@ -29,7 +29,11 @@
 (load "sting-core")
 (load "commands")
 
-(defconst sting-result-indicator "⬤")
+(defvar sting-loaded-indicator "●")
+(defvar sting-success-indicator "✓")
+(defvar sting-failure-indicator "✗")
+(defvar sting-timeout-indicator "∞")
+(defvar sting-running-indicator "⊙")
 (defconst sting-buffer-name "*sting*")
 (defconst sting-buffer-name-regexp "^\\*sting\\*$")
 
@@ -94,11 +98,11 @@ The buffer can always be toggled using `sting-toggle-window'.")
                                      '((side . right)
                                        (window-width . 0.25))))))
 
-(defface sting-no-result-indicator-face '((t :foreground "white")) "")
-(defface sting-success-indicator-face '((t :foreground "#30d158")) "")
-(defface sting-failure-indicator-face '((t :foreground "#ff453a")) "")
-(defface sting-timeout-indicator-face '((t :foreground "#ff9f0a")) "")
-(defface sting-running-indicator-face '((t :foreground "#5e5ce6")) "")
+(defface sting-loaded-face '((t :foreground "gray")) "")
+(defface sting-success-face '((t :foreground "#30d158")) "")
+(defface sting-failure-face '((t :foreground "#ff453a")) "")
+(defface sting-timeout-face '((t :foreground "#ff9f0a")) "")
+(defface sting-running-face '((t :foreground "#5e5ce6")) "")
 (defface sting-property-face '((t :underline t)) "")
 (defface sting-lisp-face '((t :foreground "#ffd60a")) "")
 
@@ -107,7 +111,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
 "))
 
 (defun sting-insert-indentation ()
-  (insert "   "))
+  (insert "  "))
 
 (defun sting-insert-property (prop &rest values)
   (sting-insert-indentation)
@@ -192,7 +196,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
           (insert-newline)
           (sting-insert-property "Timeout"
                                  (propertize (format "%d" (sting-fail-report-timeout-seconds report))
-                                             'face 'sting-timeout-indicator-face)
+                                             'face 'sting-timeout-face)
                                  "s"))
          (:assertion
           (insert-newline)
@@ -205,15 +209,13 @@ The buffer can always be toggled using `sting-toggle-window'.")
 
 (defun insert-test (test)
   (let ((report (sting-get-report test)))
-    (insert (propertize sting-result-indicator
-                        'face (etypecase report
-                                (null 'sting-no-result-indicator-face)
-                                ((eql :running) 'sting-running-indicator-face)
-                                (sting-pass-report 'sting-success-indicator-face)
-                                (sting-fail-report (ecase (sting-fail-report-kind report)
-                                                     (:assertion 'sting-failure-indicator-face)
-                                                     (:timeout 'sting-timeout-indicator-face))))
-                        'sting-test test))
+    (insert (etypecase report
+              (null (propertize sting-loaded-indicator 'face 'sting-loaded-face))
+              ((eql :running) (propertize sting-running-indicator 'face 'sting-running-face))
+              (sting-pass-report (propertize sting-success-indicator 'face 'sting-success-face))
+              (sting-fail-report (ecase (sting-fail-report-kind report)
+                                   (:assertion (propertize sting-failure-indicator 'face 'sting-failure-face))
+                                   (:timeout (propertize sting-timeout-indicator 'face 'sting-timeout-face))))))
     (insert (propertize " " 'sting-test test))
     (let* ((package (sting-test-package test))
            (name (sting-test-name test))
@@ -251,9 +253,9 @@ The buffer can always be toggled using `sting-toggle-window'.")
                                       'face face)))
             (setq mode-line-misc-info
                   (format "%s·%s·%s/%d (%3.1f%%)"
-                          (colored passed 'sting-success-indicator-face)
-                          (colored assertions 'sting-failure-indicator-face)
-                          (colored timeouts 'sting-timeout-indicator-face)
+                          (colored passed 'sting-success-face)
+                          (colored assertions 'sting-failure-face)
+                          (colored timeouts 'sting-timeout-face)
                           total
                           (* 100 ratio)))))
       (setq mode-line-misc-info "∅"))))
