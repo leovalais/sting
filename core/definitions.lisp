@@ -44,3 +44,12 @@
 (defparameter *auto-run* t
   "Defines whether a test is automatically executed whenever it is compiled
 whithin SLIME/SLY.")
+
+
+;;; Utility function
+
+(defun quote-list (list)
+  (declare (type list list))
+  (the list
+       (mapcar (lambda (x) `',x)
+               list)))

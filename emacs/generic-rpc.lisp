@@ -4,12 +4,6 @@
   #+swank `(defun ,name ,lambda-list ,@body)
   #+slynk `(slynk::defslyfun ,name ,lambda-list ,@body))
 
-(defun quote-list (list)
-  (declare (type list list))
-  (the list
-       (mapcar (lambda (x) `',x)
-               list)))
-
 (defun funcall-rpc (rpc &rest args)
   (declare (type symbol rpc))
   #+swank (apply #'swank:ed-rpc rpc args)
