@@ -23,11 +23,17 @@
                  (:file "test-container")
                  (:file "core")))
    (:module "emacs"
-    :if-feature (:and (:or :swank :slynk) :sbcl)
+    :if-feature (:and (:not :sting-no-emacs)
+                      (:or :swank :slynk)
+                      :sbcl)
     :components ((:file "generic-rpc")
                  (:file "emacs")
                  (:file "rpcs")))
    (:module "hooks"
-    :components ((:file "common-hooks" :if-feature (:or :swank :slynk))
-                 (:file "sbcl-hooks" :if-feature (:and :sbcl (:or :swank :slynk)))
-                 (:file "no-emacs-hooks" :if-feature (:not (:or :swank :slynk)))))))
+    :components ((:file "common-hooks" :if-feature (:and (:not :sting-no-emacs)
+                                                         (:or :swank :slynk)))
+                 (:file "sbcl-hooks" :if-feature (:and (:not :sting-no-emacs)
+                                                       (:or :swank :slynk)
+                                                       :sbcl))
+                 (:file "no-emacs-hooks" :if-feature (:or :sting-no-emacs
+                                                          (:not (:or :swank :slynk))))))))
