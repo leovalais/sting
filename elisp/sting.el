@@ -62,7 +62,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
 
 (global-set-key (kbd "C-c s w") 'sting-toggle-window)
 (global-set-key (kbd "C-c s TAB") 'sting-toggle-window)
-(global-set-key (kbd "C-c s s") 'sting-toggle-window-focus)
+(global-set-key (kbd "C-c s s") 'sting-bring-window-focus)
 (global-set-key (kbd "C-c s p") 'sting-run-package-interactive)
 (global-set-key (kbd "C-c s a") 'sting-run-all)
 (global-set-key (kbd "C-c s f") 'sting-run-failed)
@@ -93,20 +93,30 @@ The buffer can always be toggled using `sting-toggle-window'.")
 (defun sting-buffer ()
   (get-buffer-create sting-buffer-name))
 
+(defun sting-display-window ()
+  (display-buffer-in-side-window (sting-buffer)
+                                 '((side . right)
+                                   (window-width . 0.25)))
+  (get-buffer-window (sting-buffer)))
+
 (defun sting-toggle-window ()
   (interactive)
   (let ((window (get-buffer-window (sting-buffer))))
     (if window
         (delete-window window)
-      (display-buffer-in-side-window (sting-buffer)
-                                     '((side . right)
-                                       (window-width . 0.25))))))
+      (sting-display-window))))
 
-(defun sting-toggle-window-focus ()
+(defun sting-bring-window-focus ()
   (interactive)
-  (sting-toggle-window)
-  (when-let (window (get-buffer-window (sting-buffer)))
-    (select-window window)))
+  (let ((window (get-buffer-window (sting-buffer))))
+    (cond
+     ((null window)
+      (select-window (sting-display-window)))
+     ((and window
+           (not (eql (selected-window) window)))
+      (select-window window))
+     (t
+      (delete-window window)))))
 
 (defun sting-toggle-show-passed ()
   (interactive)
