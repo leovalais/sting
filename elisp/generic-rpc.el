@@ -5,7 +5,7 @@
 
 (setq sly-enable-evaluate-in-emacs t)
 
-(eval-when-compile
+(cl-eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar sting-lisp-backend :slynk
     "Tells Sting which backend it should try to use. Possible values are:
 - :swank (for SLIME)

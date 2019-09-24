@@ -4,7 +4,9 @@
   (setq sting-connected?
         (condition-case err
             (funcall-rpc 'sting::handshake)
-          (error nil)))
+          (error
+           (message "sting-connect error: %s" (error-message-string err))
+           nil)))
   (if sting-connected?
       (message "sting successfully connected to Lisp backend!")
     (error "sting failed to handshake with Lisp backend"))
