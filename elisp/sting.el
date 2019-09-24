@@ -38,6 +38,7 @@
 (defconst sting-buffer-name-regexp "^\\*sting\\*$")
 
 (defvar sting-show-snippets nil)
+(defvar sting-show-passed t)
 
 (defvar sting-auto-bring-buffer-policy :auto
   "Determines when to bring the sting buffer automatically.
@@ -56,6 +57,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
   (use-local-map sting-mode-map)
   (sting-connect))
 
+;;; FIXME: doen't work (cf. issue #17)
 (add-to-list 'auto-mode-alist `(,sting-buffer-name-regexp . sting-mode))
 
 (global-set-key (kbd "C-c s w") 'sting-toggle-window)
@@ -69,6 +71,7 @@ The buffer can always be toggled using `sting-toggle-window'.")
 (global-set-key (kbd "C-c s l p") 'sting-load-package-interactive)
 (global-set-key (kbd "C-c s c") 'sting-clear)
 (global-set-key (kbd "C-c s S") 'sting-sort)
+(global-set-key (kbd "C-c s t p") 'sting-toggle-show-passed)
 
 
 (defun sting-ensure-state-bring-buffer (plist)
@@ -104,6 +107,12 @@ The buffer can always be toggled using `sting-toggle-window'.")
   (sting-toggle-window)
   (when-let (window (get-buffer-window (sting-buffer)))
     (select-window window)))
+
+(defun sting-toggle-show-passed ()
+  (interactive)
+  (setq sting-show-passed (not sting-show-passed))
+  (repaint-buffer))
+
 
 (defface sting-loaded-face '((t :foreground "gray")) "")
 (defface sting-success-face '((t :foreground "#30d158")) "")
@@ -272,7 +281,11 @@ The buffer can always be toggled using `sting-toggle-window'.")
     (let ((point (point)))
       (erase-buffer)
       (dolist (test sting-loaded-tests)
-        (insert-test test))
+        (if-let (report (sting-get-report test))
+            (when (or (not (sting-pass-report-p report))
+                      sting-show-passed)
+              (insert-test test))
+          (insert-test test)))
       (goto-char point))
     (sting-insert-stats)))
 
