@@ -21,14 +21,14 @@
                  (:file "definitions")
                  (:file "fixtures")
                  (:file "test-container")
-                 (:file "core")))
+                 (:file "core")
+                 (:file "serialization")))
    (:module "emacs"
     :if-feature (:and (:not :sting-no-emacs)
                       (:or :swank :slynk)
                       :sbcl)
     :components ((:file "generic-rpc")
-                 (:file "emacs")
-                 (:file "rpcs")))
+                 (:file "emacs")))
    (:module "hooks"
     :components ((:file "common-hooks" :if-feature (:and (:not :sting-no-emacs)
                                                          (:or :swank :slynk)))

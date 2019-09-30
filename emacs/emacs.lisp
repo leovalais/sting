@@ -2,78 +2,65 @@
 
 (defparameter *emacs-client-connected?* nil)
 
+(defun the-test (test-descriptor)
+  (typecase test-descriptor
+    ;; This typecheck is necessary because of `add-test-in'
+    ;; :before method which triggers the execution: the new
+    ;; is not yet added in `*tests*', therefore,
+    ;; `find-test' would be likely to return the old version
+    ;; of that test.
+    (test test-descriptor)
+    (t (find-test test-descriptor))))
 
-(defun ppstr (sexp)
-  (subseq (with-output-to-string (out)
-            (pprint sexp out))
-          1))
+
 
+(define-rpc handshake ()
+  "Hanshakes with sting Emacs client. Returns T to signal that CL connection job
+has succeeded. Fails if another (perhaps the same) sting client was connected,
+signals an error and sends NIL to the client which initiated this handshake."
+  (flet ((ok ()
+           (setf *emacs-client-connected?* t)
+           t))
+    (cond
+      (*emacs-client-connected?*
+       (restart-case (error "A sting client is already connected.")
+         (still-connect ()
+           :report "Ignore the possible redundancy and proceed anyway (have you multiple buffers with sting-mode in?)"
+           (ok))))
+      (t (ok)))))
 
-(defgeneric serialize (object))
+(define-rpc ensure-emacs-connected ()
+  (unless *emacs-client-connected?*
+    (funcall-rpc 'sting-connect-rpc))
+  (values))
 
-(defmethod serialize ((test test))
-  (with-slots (name description source-info) test
-    (list :tag :test
-          :name (symbol-name name)
-          :package (package-name (symbol-package name))
-          :description description
-          :source-info source-info)))
+(define-rpc send-tests (&key (tests *tests*) wait?)
+  (declare (type (or test-container sequence hash-table) tests)
+           (type boolean wait?))
+  (ensure-emacs-connected)
+  (let* ((tests (etypecase tests
+                  (test-container (tests tests))
+                  (sequence tests)
+                  (hash-table (hash-table-values tests))))
+         (serialized-tests (map 'list #'serialize tests)))
+    (if wait?
+        (funcall-rpc 'sting-recieve-tests serialized-tests)
+        (funcall-rpc-no-wait 'sting-recieve-tests serialized-tests))))
 
-(defmethod serialize ((report imotep))
-  (with-slots (test values) report
-    (list :tag :pass-report
-          :test (serialize test)
-          :values (format nil "~S" values))))
+(define-rpc emacs-run (test-descriptors)
+  (ensure-emacs-connected)
+  (let* ((tests (mapcar #'the-test test-descriptors))
+         (serialized-tests (mapcar #'serialize tests)))
+    (if tests
+        (progn
+          (funcall-rpc-no-wait 'sting-mark-tests-as-running-rpc serialized-tests)
+          (let* ((reports (run-in-parallel tests))
+                 (serialized-reports (mapcar #'serialize reports)))
+            (funcall-rpc-no-wait 'sting-recieve-reports serialized-reports)))
+        (error "no test found for descriptors ~s" test-descriptors))))
 
-(defmethod serialize ((report failure))
-  (with-slots (test kind failure-error timeout-seconds) report
-    (list :tag :fail-report
-          :test (serialize test)
-          :kind kind
-          :error (serialize failure-error)
-          :timeout-seconds timeout-seconds)))
+(define-rpc get-package-name-list ()
+  (mapcar #'package-name (test-package-list *tests*)))
 
-(defmethod serialize ((- trivial-timeout:timeout-error))
-  (the string "TIMEOUT-ERROR"))
-
-(defmethod serialize ((err assertion-error))
-  (serialize-assertion-error err))
-
-(defmethod serialize ((vf valued-form))
-  (list :tag :valued-form
-        :value (format nil "~S" (value vf))
-        :form (ppstr (form vf))))
-
-
-(defgeneric serialize-assertion-error (err)
-  (:method-combination append :most-specific-last))
-
-(defmethod serialize-assertion-error append ((err assertion-error))
-  (list :tag :error
-        :class (symbol-name (class-name (class-of err)))
-        :assertion (ppstr (assertion err))
-        :form (ppstr (form err))
-        :description (description err)))
-
-(defmethod serialize-assertion-error append ((err boolean-assertion-error))
-  (list :actual (serialize (actual err))
-        :expected (ppstr (expected err))))
-
-(defmethod serialize-assertion-error append ((err no-error-assertion-error))
-  (list :actual (serialize (actual err))
-        :expected (ppstr (expected err))))
-
-(defmethod serialize-assertion-error append ((err no-error-assertion-error))
-  (list :signalled (serialize (signalled err))
-        :expected (ppstr (expected err))))
-
-(defmethod serialize-assertion-error append ((err equality-assertion-error))
-  (list :actual (serialize (actual err))
-        :expected (serialize (expected err))))
-
-(defmethod serialize-assertion-error append ((err inequality-assertion-error))
-  (list :value (serialize (value err))))
-
-(defmethod serialize-assertion-error append ((err cmp-assertion-error))
-  (list :operand-1 (serialize (operand-1 err))
-        :operand-2 (serialize (operand-2 err))))
+(define-rpc send-package (package-name)
+  (send-tests :tests (tests-of-package *tests* package-name)))
