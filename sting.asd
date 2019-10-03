@@ -22,7 +22,8 @@
                  (:file "fixtures")
                  (:file "test-container")
                  (:file "core")
-                 (:file "serialization")))
+                 (:file "serialization")
+                 (:file "export")))
    (:module "emacs"
     :if-feature (:and (:not :sting-no-emacs)
                       (:or :swank :slynk)
