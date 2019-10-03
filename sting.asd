@@ -30,7 +30,7 @@
                       :sbcl)
     :components ((:file "generic-rpc")
                  (:file "emacs")))
-   (:module "hooks"
+   (:module "interactive"
     :components ((:file "common-hooks" :if-feature (:and (:not :sting-no-emacs)
                                                          (:or :swank :slynk)))
                  (:file "sbcl-hooks" :if-feature (:and (:not :sting-no-emacs)
