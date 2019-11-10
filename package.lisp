@@ -29,7 +29,7 @@
            equality-assertion-error
            inequality-assertion-error
            cmp-assertion-error
-           assert
+           assert-
            assert-not
            assert-error
            assert-=

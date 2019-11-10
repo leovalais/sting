@@ -5,7 +5,7 @@
                 :initform ""
                 :reader description)
    (assertion :initarg :assertion
-              :initform 'assert
+              :initform 'assert-
               :reader assertion)
    (form :initarg :form
          :reader form)))
@@ -36,14 +36,14 @@
              :type boolean
              :reader expected)))
 
-(defmacro assert (test-form &key (desc ""))
+(defmacro assert- (test-form &key (desc ""))
   (with-gensyms (x)
     `(let ((,x ,test-form))
        (if ,x
            t
            (fail (make-condition 'boolean-assertion-error
-                                 :assertion 'assert
-                                 :form '(assert ,test-form)
+                                 :assertion 'assert-
+                                 :form '(assert- ,test-form)
                                  :description ,desc
                                  :actual (make-instance 'valued-form
                                                         :value ,x
