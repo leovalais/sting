@@ -17,10 +17,12 @@
 (defun export-tap (reports)
   (declare (type list reports))
   (format t "~&TAP version 13~%")
-  (let ((n  (length reports)))
-    (format t "1..~A~%" n)
-    (mapc #'tap-test reports (loop :for i :from 1 :to n :collect i))
-    (tap-summary (count-if-not #'tap-success? reports) n)))
+  (if reports
+      (let ((n (length reports)))
+        (format t "1..~A~%" n)
+        (mapc #'tap-test reports (loop :for i :from 1 :to n :collect i))
+        (tap-summary (count-if-not #'tap-success? reports) n))
+      (format t "# no tests were run")))
 
 
 
