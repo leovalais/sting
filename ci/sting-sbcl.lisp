@@ -5,13 +5,11 @@
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 
-(require 'asdf)
-
 (setf sb-impl::*default-external-format* :utf-8
       sb-alien::*default-c-string-external-format* :utf-8)
 
-(asdf:load-system :sting)
-(asdf:load-system :lparallel)
+(ql:quickload :sting)
+(ql:quickload :lparallel)
 
 (defun read-all (string)
   (with-input-from-string (in string)
@@ -22,7 +20,7 @@
 (defun load-systems (systems)
   (dolist (system systems)
     (etypecase system
-      ((or string keyword) (asdf:load-system system))
+      ((or string keyword) (ql:quickload system))
       (list (mapcan #'load-systems system))))
   t)
 
