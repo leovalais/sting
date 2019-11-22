@@ -21,6 +21,10 @@
            define-before
            define-after
 
+           define-dietz-test
+           with-dietz-deftest
+           deftest
+
            assertion-error
            valued-form
            boolean-assertion-error
@@ -32,6 +36,8 @@
            assert-
            assert-not
            assert-error
+           assert-equal
+           assert-values
            assert-=
            assert-/=
            assert-<

@@ -23,7 +23,8 @@
                  (:file "test-container")
                  (:file "core")
                  (:file "serialization")
-                 (:file "export")))
+                 (:file "export")
+                 (:file "other-syntaxes")))
    (:module "emacs"
     :if-feature (:and (:not :sting-no-emacs)
                       (:or :swank :slynk)
