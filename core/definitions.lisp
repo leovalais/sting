@@ -28,16 +28,18 @@
            :reader eval-values)))
 
 (defclass failure (report)
-  ((kind :initarg :failure-kind
-         :reader failure-kind
-         :type (member :assertion :timeout))
-   (failure-error :initarg :failure-error
+  ((failure-error :initarg :failure-error
                   :reader failure-error
-                  :type condition)
-   (timeout-seconds :initarg :timeout-seconds
+                  :type condition)))
+
+(defclass timeout-failure (failure)
+  ((timeout-seconds :initarg :timeout-seconds
                     :initform nil
                     :reader timeout-seconds
                     :type (or null number))))
+
+(defclass panic-failure (failure)
+  ())
 
 
 (defparameter *timeout-seconds* 2)

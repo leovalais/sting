@@ -47,14 +47,17 @@
     (assertion-error (e)
       (make-instance 'failure
                      :test test
-                     :failure-kind :assertion
                      :failure-error e))
     (trivial-timeout:timeout-error (e)
-      (make-instance 'failure
+      (make-instance 'timeout-failure
                      :test test
-                     :failure-kind :timeout
                      :failure-error e
-                     :timeout-seconds *timeout-seconds*))))
+                     :timeout-seconds *timeout-seconds*))
+    (condition (e)
+      (make-instance 'panic-failure
+                     :test test
+                     :failure-error e))))
+
 
 
 (defparameter *define-test-hooks* (make-hash-table))

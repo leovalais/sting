@@ -27,12 +27,28 @@
           :values (format nil "~S" values))))
 
 (defmethod serialize ((report failure))
-  (with-slots (test kind failure-error timeout-seconds) report
+  (with-slots (test failure-error) report
     (list :tag :fail-report
           :test (serialize test)
-          :kind kind
+          :kind :assertion
+          :error (serialize failure-error)
+          :timeout-seconds nil)))
+
+(defmethod serialize ((report timeout-failure))
+  (with-slots (test failure-error timeout-seconds) report
+    (list :tag :fail-report
+          :test (serialize test)
+          :kind :timeout
           :error (serialize failure-error)
           :timeout-seconds timeout-seconds)))
+
+(defmethod serialize ((report panic-failure))
+  (with-slots (test failure-error) report
+    (list :tag :fail-report
+          :test (serialize test)
+          :kind :panic
+          :error (ppstr failure-error)
+          :timeout-seconds nil)))
 
 (defmethod serialize ((- trivial-timeout:timeout-error))
   (the string "TIMEOUT-ERROR"))
