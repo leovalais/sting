@@ -10,6 +10,8 @@ Optionally, to enable interaction with Emacs:
 - Then, put in your Emacs configuration file:
   #+BEGIN_SRC elisp
 (require 'sting)
+(setq sly-enable-evaluate-in-emacs t) ; if you're using Sly
+(setq slime-enable-evaluate-in-emacs t) ; if you're using Slime
   #+END_SRC
 - And in your Common Lisp configuration file (for example =~/.sbclrc=):
   #+BEGIN_SRC common-lisp
