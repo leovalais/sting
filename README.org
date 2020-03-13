@@ -1,0 +1,17 @@
+#+TITLE: =sting= --- A testing library for Common Lisp
+
+* Installation
+Clone this repository where ASDF (or Quicklisp, cf. https://www.quicklisp.org/)
+can find it (for example under =~/common-lisp=).
+
+To enable interaction with Emacs:
+- Open the directory =sting/emacs= within Emacs (using Dired)
+- Run =M-x= =package-install-from-buffer=
+- Then, put in your Emacs configuration file:
+  #+BEGIN_SRC elisp
+(require 'sting)
+  #+END_SRC
+- And in your Common Lisp configuration file (for example =~/.sbclrc=):
+  #+BEGIN_SRC common-lisp
+(pushnew *features* :sting-with-emacs)
+  #+END_SRC
