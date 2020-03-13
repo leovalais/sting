@@ -23,7 +23,7 @@
          :reader report-test
          :type test)))
 
-(defclass imotep (report)
+(defclass success (report)
   ((values :initarg :eval-values
            :reader eval-values)))
 

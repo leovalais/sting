@@ -36,7 +36,7 @@
 (let ((reports (sting:run-all)))
   (sting::export-reports reports)
   (let ((fails (count-if-not (lambda (r)
-                               (typep r 'sting:imotep))
+                               (typep r 'sting:success))
                              reports)))
     (unless (zerop fails)
       (sb-posix::exit (1+ fails)))))

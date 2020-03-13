@@ -20,7 +20,7 @@
           :description description
           :source-info source-info)))
 
-(defmethod serialize ((report imotep))
+(defmethod serialize ((report success))
   (with-slots (test values) report
     (list :tag :pass-report
           :test (serialize test)

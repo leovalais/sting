@@ -1,7 +1,7 @@
 (in-package :sting)
 
 (defun tap-success? (report)
-  (typep report 'imotep))
+  (typep report 'success))
 
 (defun tap-summary (failed total)
   (let ((ratio (* 100.0 (- 1.0 (/ failed total)))))

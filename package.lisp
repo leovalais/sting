@@ -3,7 +3,7 @@
   (:shadow assert)
   (:export test
            report
-           imotep
+           success
            failure
            *timeout-seconds*
            *auto-run*

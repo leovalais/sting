@@ -43,7 +43,7 @@
   (declare (type function function))
   (handler-case (trivial-timeout:with-timeout (*timeout-seconds*)
                   (let ((values (multiple-value-list (funcall function))))
-                    (make-instance 'imotep :test test :eval-values values)))
+                    (make-instance 'success :test test :eval-values values)))
     (assertion-error (e)
       (make-instance 'failure
                      :test test
