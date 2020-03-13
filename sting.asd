@@ -26,16 +26,16 @@
                  (:file "export")
                  (:file "other-syntaxes")))
    (:module "emacs"
-    :if-feature (:and (:not :sting-no-emacs)
+    :if-feature (:and :sting-with-emacs
                       (:or :swank :slynk)
                       :sbcl)
     :components ((:file "generic-rpc")
                  (:file "emacs")))
    (:module "interactive"
-    :components ((:file "common-hooks" :if-feature (:and (:not :sting-no-emacs)
+    :components ((:file "common-hooks" :if-feature (:and :sting-with-emacs
                                                          (:or :swank :slynk)))
-                 (:file "sbcl-hooks" :if-feature (:and (:not :sting-no-emacs)
+                 (:file "sbcl-hooks" :if-feature (:and :sting-with-emacs
                                                        (:or :swank :slynk)
                                                        :sbcl))
-                 (:file "no-emacs-hooks" :if-feature (:or :sting-no-emacs
+                 (:file "no-emacs-hooks" :if-feature (:or (:not :sting-with-emacs)
                                                           (:not (:or :swank :slynk))))))))
